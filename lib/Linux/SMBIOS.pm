@@ -30,32 +30,29 @@ $VERSION = '0.01' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 
 
-#
-# Methods
-#
-
-# Create a new object
 sub new {
 	ref(my $class = shift) && croak 'Class name required';
 	croak 'Odd number of elements passed when even was expected' if @_ % 2;
 	my $self = { @_ };
 
-	my $validkeys = join('|',qw(rrdtool cf default_dstype default_dst));
+	my @commands = qw(dmidecode biosdecode x86info);
+	my $validkeys = join('|',@commands);
 	cluck('Unrecognised parameters passed: '.
 		join(', ',grep(!/^$validkeys$/,keys %{$self})))
 		if (grep(!/^$validkeys$/,keys %{$self}) && $^W);
 
-	$self->{rrdtool} = _find_binary(exists $self->{rrdtool} ?
-						$self->{rrdtool} : 'rrdtool');
+	for my $command (@commands) {
+		croak "Command $command '$self->{$command}'; file not found"
+			if defined $self->{$command} && !-f $self->{$command};
+	}
 
-	$self->{default_dstype} ||= $self->{default_dst};
-
-	#$self->{cf} ||= [ qw(AVERAGE MIN MAX LAST) ];
-	# By default, now only create RRAs for AVERAGE and MAX, like
-	# mrtg v2.13.2. This is to save disk space and processing time
-	# during updates etc.
-	$self->{cf} ||= [ qw(AVERAGE MAX) ]; 
-	$self->{cf} = [ $self->{cf} ] if !ref($self->{cf});
+	if (!defined $self->{dmidecode}) {
+		require File::Which;
+		for my $command (@commands) {
+			$self->{$command} = File::Which::which($command)
+				if !defined $self->{$command};
+		}
+	}
 
 	bless($self,$class);
 	DUMP($class,$self);
@@ -63,127 +60,109 @@ sub new {
 }
 
 
-# Create a new RRD file
-sub create {
+sub probe {
 	my $self = shift;
 	unless (ref $self && UNIVERSAL::isa($self, __PACKAGE__)) {
 		unshift @_, $self unless $self eq __PACKAGE__;
 		$self = new __PACKAGE__;
 	}
 
-	# Grab or guess the filename
-	my $rrdfile = (@_ % 2 && !_valid_scheme($_[0]))
-				|| (!(@_ % 2) && _valid_scheme($_[1]))
-					? shift : _guess_filename();
-	croak "RRD file '$rrdfile' already exists" if -f $rrdfile;
-	TRACE("Using filename: $rrdfile");
+	my ($cmd) = $self->{dmidecode} =~ /^([\/\.\_\-a-zA-Z0-9 >]+)$/;
+	TRACE($cmd);
 
-	# We've been given a scheme specifier
-	# Until v1.32 'year' was the default. As of v1.33 'mrtg'
-	# is the new default scheme.
-	#my $scheme = 'year';
-	my $scheme = 'mrtg';
-	if (@_ % 2 && _valid_scheme($_[0])) {
-		$scheme = _valid_scheme($_[0]);
-		shift @_;
+	my $fh;
+	open($fh,'-|',$cmd) || croak "Unable to open file handle for command '$cmd': $!";
+	while (local $_ = <$fh>) {
+		$self->{dmidecode_data} .= $_;
 	}
-	TRACE("Using scheme: $scheme");
+	close($fh) || carp "Unable to close file handle for command '$cmd': $!";
+	$self->{dmidecode} = $self->_parse('dmidecode',$self->{dmidecode_data});
 
-	croak 'Odd number of elements passed when even was expected' if @_ % 2;
-	my %ds = @_;
-	DUMP('%ds',\%ds);
-
-	my $rrdDef = _rrd_def($scheme);
-	my @def = ('-b', time - _seconds_in($scheme,120));
-	push @def, '-s', ($rrdDef->{step} || 300);
-
-	# Add data sources
-	for my $ds (sort keys %ds) {
-		$ds =~ s/[^a-zA-Z0-9_-]//g;
-		push @def, sprintf('DS:%s:%s:%s:%s:%s',
-						substr($ds,0,19),
-						uc($ds{$ds}),
-						($rrdDef->{heartbeat} || 600),
-						'U','U'
-					);
-	}
-
-	# Add RRA definitions
-	my %cf;
-	for my $cf (@{$self->{cf}}) {
-		$cf{$cf} = $rrdDef->{rra};
-	}
-	for my $cf (sort keys %cf) {
-		for my $rra (@{$cf{$cf}}) {
-			push @def, sprintf('RRA:%s:%s:%s:%s',
-					$cf, 0.5, $rra->{step}, $rra->{rows}
-				);
-		}
-	}
-
-	DUMP('@def',\@def);
-
-	# Pass to RRDs for execution
-	my @rtn = RRDs::create($rrdfile, @def);
-	my $error = RRDs::error();
-	croak($error) if $error;
-	DUMP('RRDs::info',RRDs::info($rrdfile));
-	return wantarray ? @rtn : \@rtn;
+	DUMP('$self',$self);
+	return scalar($self->{dmidecode}) ?
+			scalar(keys(%{$self->{dmidecode}->{strct}})) : undef;
 }
 
 
+sub _parse {
+	my ($self,$type,$str) = @_;
 
+	my %strct;
+	my %data;
+	my $handle = '';
+	my $key = '';
+	my $indent = '';
 
+	for (split(/\n/,$str)) {
+		next if /^\s*$/;
 
+		if (/^# dmidecode ([\d\.]+)\s*$/) {
+			$data{dmidecode} = $1;
 
-sub _safe_exec {
-	croak('Pardon?!') if ref $_[0];
-	my $cmd = shift;
-	if ($cmd =~ /^([\/\.\_\-a-zA-Z0-9 >]+)$/) {
-		$cmd = $1;
-		TRACE($cmd);
-		system($cmd);
-		if ($? == -1) {
-			croak "Failed to execute command '$cmd': $!\n";
-		} elsif ($? & 127) {
-			croak(sprintf("While executing command '%s', child died ".
-				"with signal %d, %s coredump\n", $cmd,
-				($? & 127),  ($? & 128) ? 'with' : 'without'));
+		} elsif (/^(\d+) structures occupying (\d+) bytes?\.\s*$/) {
+			$data{structures} = $1;
+			$data{bytes} = $2;
+
+		} elsif (/^SMBIOS ([\d\.]+) present\.?\s*$/) {
+			$data{smbios} = $1;
+
+		} elsif (/^Table at (0-9A-Fx]+)\.?\s*$/) {
+			$data{location} = $1;
+
+		} elsif (/^Handle ([0-9A-Fx]+)(?:, DMI type (\d+), (\d+) bytes?\.?)?\s*$/) {
+			$handle = $1;
+			$key = '';
+			$strct{$handle} = {};
+			$strct{$handle}->{dmitype} = $2 if defined $2;
+			$strct{$handle}->{bytes} = $3 if defined $3;
+
+		} elsif (defined $handle && $handle =~ /\S+/) {
+			if (/^\s*DMI type (\d+), (\d+) bytes?\.?\s*$/) {
+				$strct{$handle}->{dmitype} = $1 if defined $1;
+				$strct{$handle}->{bytes} = $2 if defined $2;
+
+			} elsif (defined $strct{$handle}->{dmitype} &&
+					!defined $strct{$handle}->{name} &&
+					/^\s*(\S+.*?)\s*$/) {
+				$strct{$handle}->{name} = $1;
+				$key = '';
+
+			} elsif (defined $strct{$handle}->{name}) {
+				if (/^\s*(.+?): (\S+.*?)\s*$/) {
+					$key = '';
+					$strct{$handle}->{data}->{$1} = $2;
+
+				} elsif ((!$key || !/^$indent/) && /^\s+(.+?):\s*$/) {
+					$key = $1;
+
+				} elsif ($key && /^(\s+)(\S+.*?)\s*$/) {
+					$indent = $1;
+					my $data = $2;
+
+					if (  (!defined($strct{$handle}->{data}->{$key}) ||
+							ref($strct{$handle}->{data}->{$key}) ne 'ARRAY') 
+							&& $data =~ /^(?:[0-9A-F]{2} )+(?:[0-9A-F]{2})?$/) {
+						$strct{$handle}->{data}->{$key} .=
+							defined $strct{$handle}->{data}->{$key} ?
+							" $data" : $data;
+
+					} else {
+						$strct{$handle}->{data}->{$key} = [()]
+							unless defined $strct{$handle}->{data}->{$key};
+						push @{$strct{$handle}->{data}->{$key}}, $data;
+					}
+				}
+			}
 		}
-		my $exit_value = $? >> 8;
-		croak "Error caught from '$cmd'" if $exit_value != 0;
-		return $exit_value;
-	} else {
-		croak "Unexpected potentially unsafe command will not be executed: $cmd";
-	}
-}
-
-
-sub _find_binary {
-	croak('Pardon?!') if ref $_[0];
-	my $binary = shift || 'rrdtool';
-	return $binary if -f $binary && -x $binary;
-
-	my @paths = File::Spec->path();
-	my $rrds_path = dirname($INC{'RRDs.pm'});
-	push @paths, $rrds_path;
-	push @paths, File::Spec->catdir($rrds_path,
-				File::Spec->updir(),File::Spec->updir(),'bin');
-
-	for my $path (@paths) {
-		my $filename = File::Spec->catfile($path,$binary);
-		return $filename if -f $filename && -x $filename;
 	}
 
-	my $path = File::Spec->catdir(File::Spec->rootdir(),'usr','local');
-	if (opendir(DH,$path)) {
-		my @dirs = sort { $b cmp $a } grep(/^rrdtool/,readdir(DH));
-		closedir(DH) || carp "Unable to close file handle: $!";
-		for my $dir (@dirs) {
-			my $filename = File::Spec->catfile($path,$dir,'bin',$binary);
-			return $filename if -f $filename && -x $filename;
-		}
-	}
+	$data{strct} = \%strct;
+	carp sprintf("Only parsed %d structures when %d were expected",
+			scalar(keys(%strct)), $data{structures})
+		if scalar(keys(%strct)) != $data{structures};
+
+	DUMP($type,\%data);
+	return \%data;
 }
 
 
@@ -234,7 +213,8 @@ examples/*.pl,
 L<http://www.nongnu.org/dmidecode/>,
 L<http://linux.dell.com/libsmbios/>,
 L<http://sourceforge.net/projects/x86info/>,
-L<http://www.dmtf.org/standards/smbios>
+L<http://www.dmtf.org/standards/smbios>,
+L<biosdecode(8)>, L<dmidecode(8)>, L<vpddecode(8)>
 
 =head1 VERSION
 
@@ -261,6 +241,55 @@ L<http://www.apache.org/licenses/LICENSE-2.0>
 
 =cut
 
+
+__DATA__
+
+static const u8 opt_type_bios[]={ 0, 13, 255 };
+static const u8 opt_type_system[]={ 1, 12, 15, 23, 32, 255 };
+static const u8 opt_type_baseboard[]={ 2, 10, 255 };
+static const u8 opt_type_chassis[]={ 3, 255 };
+static const u8 opt_type_processor[]={ 4, 255 };
+static const u8 opt_type_memory[]={ 5, 6, 16, 17, 255 };
+static const u8 opt_type_cache[]={ 7, 255 };
+static const u8 opt_type_connector[]={ 8, 255 };
+static const u8 opt_type_slot[]={ 9, 255 };
+
+static const struct type_keyword opt_type_keyword[]={
+	{ "bios", opt_type_bios },
+	{ "system", opt_type_system },
+	{ "baseboard", opt_type_baseboard },
+	{ "chassis", opt_type_chassis },
+	{ "processor", opt_type_processor },
+	{ "memory", opt_type_memory },
+	{ "cache", opt_type_cache },
+	{ "connector", opt_type_connector },
+	{ "slot", opt_type_slot },
+};
+
+static const struct string_keyword opt_string_keyword[]={
+	{ "bios-vendor", 0, 0x04, NULL, NULL },
+	{ "bios-version", 0, 0x05, NULL, NULL },
+	{ "bios-release-date", 0, 0x08, NULL, NULL },
+	{ "system-manufacturer", 1, 0x04, NULL, NULL },
+	{ "system-product-name", 1, 0x05, NULL, NULL },
+	{ "system-version", 1, 0x06, NULL, NULL },
+	{ "system-serial-number", 1, 0x07, NULL, NULL },
+	{ "system-uuid", 1, 0x08, NULL, dmi_system_uuid },
+	{ "baseboard-manufacturer", 2, 0x04, NULL, NULL },
+	{ "baseboard-product-name", 2, 0x05, NULL, NULL },
+	{ "baseboard-version", 2, 0x06, NULL, NULL },
+	{ "baseboard-serial-number", 2, 0x07, NULL, NULL },
+	{ "baseboard-asset-tag", 2, 0x08, NULL, NULL },
+	{ "chassis-manufacturer", 3, 0x04, NULL, NULL },
+	{ "chassis-type", 3, 0x05, dmi_chassis_type, NULL },
+	{ "chassis-version", 3, 0x06, NULL, NULL },
+	{ "chassis-serial-number", 3, 0x07, NULL, NULL },
+	{ "chassis-asset-tag", 3, 0x08, NULL, NULL },
+	{ "processor-family", 4, 0x06, dmi_processor_family, NULL },
+	{ "processor-manufacturer", 4, 0x07, NULL, NULL },
+	{ "processor-version", 4, 0x10, NULL, NULL },
+	{ "processor-frequency", 4, 0x16, NULL, dmi_processor_frequency },
+};
 
 __END__
 

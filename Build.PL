@@ -15,6 +15,7 @@ $build = Module::Build->new(
 
 		requires => {
 			'Carp'           => 0, # 1.04
+			'File::Which'    => 0.05, # 0.05
 		},
 
 		build_requires => {
