@@ -1,7 +1,7 @@
 ############################################################
 #
 #   $Id$
-#   Linux::SMBIOS - Interface to SMBIOS under Linux using dmidecode
+#   Parse::DMIDecode - Interface to SMBIOS under Linux using dmidecode
 #
 #   Copyright 2006 Nicola Worthington
 #
@@ -19,7 +19,7 @@
 #
 ############################################################
 
-package Linux::SMBIOS;
+package Parse::DMIDecode;
 # vim:ts=4:sw=4:tw=78
 
 use strict;
@@ -227,15 +227,15 @@ sub DUMP {
 
 =head1 NAME
 
-Linux::SMBIOS - Interface to SMBIOS under Linux using dmidecode
+Parse::DMIDecode - Interface to SMBIOS under Linux using dmidecode
 
 =head1 SYNOPSIS
 
  use strict;
- use Linux::SMBIOS ();
+ use Parse::DMIDecode ();
  
  # Create an interface object
- my $smbios = new Linux::SMBIOS;
+ my $smbios = new Parse::DMIDecode;
 
 =head1 DESCRIPTION
 

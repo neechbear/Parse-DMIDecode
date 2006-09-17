@@ -6,7 +6,7 @@ use Module::Build;
 use vars qw($build);
 
 $build = Module::Build->new(
-		module_name        => 'Linux::SMBIOS',
+		module_name        => 'Parse::DMIDecode',
 		license            => 'open_source',
 		create_makefile_pl => 'passthrough',
 		create_readme      => 1,
@@ -14,16 +14,16 @@ $build = Module::Build->new(
 		sign               => 0,
 
 		requires => {
-			'Carp'           => 0, # 1.04
-			'File::Which'    => 0.05, # 0.05
+			'Carp'         => 0, # 1.04
 		},
 
 		build_requires => {
-			'Test'                => 0, # 1.25
-			'Test::More'          => 0, # 0.60
+			'Test'         => 0, # 1.25
+			'Test::More'   => 0, # 0.60
 		},
 
 		recommends => {
+			'File::Which'         => 0.05, # 0.05
 			'Test::Pod'           => 1.20,
 			'Test::Pod::Coverage' => 1.06,
 			'Test::Deep'          => 0.093,
