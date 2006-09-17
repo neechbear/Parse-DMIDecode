@@ -30,6 +30,10 @@ $VERSION = '0.01' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 
 
+#
+# Methods
+#
+
 sub new {
 	ref(my $class = shift) && croak 'Class name required';
 	croak 'Odd number of elements passed when even was expected' if @_ % 2;
@@ -67,102 +71,135 @@ sub probe {
 		$self = new __PACKAGE__;
 	}
 
-	my ($cmd) = $self->{dmidecode} =~ /^([\/\.\_\-a-zA-Z0-9 >]+)$/;
+	my $type = 'dmidecode';
+	my ($cmd) = $self->{$type} =~ /^([\/\.\_\-a-zA-Z0-9 >]+)$/;
 	TRACE($cmd);
 
 	my $fh;
 	open($fh,'-|',$cmd) || croak "Unable to open file handle for command '$cmd': $!";
 	while (local $_ = <$fh>) {
-		$self->{dmidecode_data} .= $_;
+		$self->{raw}->{$type} .= $_;
 	}
 	close($fh) || carp "Unable to close file handle for command '$cmd': $!";
-	$self->{dmidecode} = $self->_parse('dmidecode',$self->{dmidecode_data});
 
-	DUMP('$self',$self);
-	return scalar($self->{dmidecode}) ?
-			scalar(keys(%{$self->{dmidecode}->{strct}})) : undef;
+	return $self->parse($self->{raw}->{$type},$type);
 }
 
 
-sub _parse {
-	my ($self,$type,$str) = @_;
+sub parse {
+	my $self = shift;
+	unless (ref $self && UNIVERSAL::isa($self, __PACKAGE__)) {
+		unshift @_, $self unless $self eq __PACKAGE__;
+		$self = new __PACKAGE__;
+	}
 
-	my %strct;
+	my $type = $_[1] || 'dmidecode';
+	$self->{parsed}->{$type} = $self->_parse($_[0],$type);
+
+	DUMP('$self',$self);
+	return $self->{parsed}->{$type}->{structures};
+}
+
+
+
+#
+# Private methods
+#
+
+sub _parse {
+	my ($self,$str,$type) = @_;
 	my %data;
-	my $handle = '';
-	my $key = '';
-	my $indent = '';
+	my %strct;
 
 	for (split(/\n/,$str)) {
 		next if /^\s*$/;
 
+		# dmidecode headers
 		if (/^# dmidecode ([\d\.]+)\s*$/) {
 			$data{dmidecode} = $1;
-
 		} elsif (/^(\d+) structures occupying (\d+) bytes?\.\s*$/) {
 			$data{structures} = $1;
 			$data{bytes} = $2;
-
 		} elsif (/^SMBIOS ([\d\.]+) present\.?\s*$/) {
 			$data{smbios} = $1;
-
-		} elsif (/^Table at (0-9A-Fx]+)\.?\s*$/) {
+		} elsif (/^Table at ([0-9A-Fx]+)\.?\s*$/) {
 			$data{location} = $1;
 
+		# data
 		} elsif (/^Handle ([0-9A-Fx]+)(?:, DMI type (\d+), (\d+) bytes?\.?)?\s*$/) {
-			$handle = $1;
-			$key = '';
-			$strct{$handle} = {};
-			$strct{$handle}->{dmitype} = $2 if defined $2;
-			$strct{$handle}->{bytes} = $3 if defined $3;
-
-		} elsif (defined $handle && $handle =~ /\S+/) {
-			if (/^\s*DMI type (\d+), (\d+) bytes?\.?\s*$/) {
-				$strct{$handle}->{dmitype} = $1 if defined $1;
-				$strct{$handle}->{bytes} = $2 if defined $2;
-
-			} elsif (defined $strct{$handle}->{dmitype} &&
-					!defined $strct{$handle}->{name} &&
-					/^\s*(\S+.*?)\s*$/) {
-				$strct{$handle}->{name} = $1;
-				$key = '';
-
-			} elsif (defined $strct{$handle}->{name}) {
-				if (/^\s*(.+?): (\S+.*?)\s*$/) {
-					$key = '';
-					$strct{$handle}->{data}->{$1} = $2;
-
-				} elsif ((!$key || !/^$indent/) && /^\s+(.+?):\s*$/) {
-					$key = $1;
-
-				} elsif ($key && /^(\s+)(\S+.*?)\s*$/) {
-					$indent = $1;
-					my $data = $2;
-
-					if (  (!defined($strct{$handle}->{data}->{$key}) ||
-							ref($strct{$handle}->{data}->{$key}) ne 'ARRAY') 
-							&& $data =~ /^(?:[0-9A-F]{2} )+(?:[0-9A-F]{2})?$/) {
-						$strct{$handle}->{data}->{$key} .=
-							defined $strct{$handle}->{data}->{$key} ?
-							" $data" : $data;
-
-					} else {
-						$strct{$handle}->{data}->{$key} = [()]
-							unless defined $strct{$handle}->{data}->{$key};
-						push @{$strct{$handle}->{data}->{$key}}, $data;
-					}
-				}
+			if (keys %strct) {
+				_parse_raw(\%strct);
+				$data{type}->{$strct{dmitype}} = {%strct};
+				%strct = ();
 			}
+			$strct{handle} = $1;
+			$strct{dmitype} = $2 if defined $2;
+			$strct{bytes} = $3 if defined $3;
+		} elsif (defined $strct{handle} &&
+				/^\s*DMI type (\d+), (\d+) bytes?\.?\s*$/) {
+			$strct{dmitype} = $1 if defined $1;
+			$strct{bytes} = $2 if defined $2;
+		} else {
+			$strct{raw} = [] unless defined $strct{raw};
+			push @{$strct{raw}}, $_;
 		}
 	}
 
-	$data{strct} = \%strct;
-	carp sprintf("Only parsed %d structures when %d were expected",
-			scalar(keys(%strct)), $data{structures})
-		if scalar(keys(%strct)) != $data{structures};
+	if (keys %strct) {
+		_parse_raw(\%strct);
+		$data{type}->{$strct{dmitype}} = {%strct};
+	}
 
-	DUMP($type,\%data);
+#	carp sprintf("Only parsed %d structures when %d were expected",
+#			scalar(keys(%{$data{type}})), $data{structures})
+#		if scalar(keys(%{$data{type}})) != $data{structures};
+
 	return \%data;
+}
+
+
+sub _parse_raw {
+	my $ref = shift;
+
+	my $name_indent = 0;
+	my $key_indent  = 0;
+	my $name = '';
+	my $key = '';
+
+	my @errors;
+	my %strct;
+
+	for (my $l = 0; $l < @{$ref->{raw}}; $l++) {
+		local $_ = $ref->{raw}->[$l];
+		my ($indent) = $_ =~ /^(\s+)/;
+		$indent = '' unless defined $indent;
+		$indent = length($indent);
+
+		$name_indent = $indent if $l == 0;
+		if ($l == 1) {
+			if ($indent > $name_indent) { $key_indent = $indent; }
+			else { push @errors, "Parse error: key_indent ($indent) <= name_indent ($name_indent)"; }
+		}
+
+		# data
+		if (/^\s{$name_indent}(\S+.*?)\s*$/) {
+			$name = $1;
+			$strct{$name} = {};
+			$key = '';
+		} elsif ($name && /^\s{$key_indent}(\S.*?)(?::|: (\S+.*?))?\s*$/) {
+			$key = $1;
+			$strct{$name}->{$key}->[0] = $2;
+			$strct{$name}->{$key}->[1] = [] unless defined $strct{$name}->{$key}->[1];
+		} elsif ($name && $key && $indent > $key_indent && /^\s*(\S+.*?)\s*$/) {
+			push @{$strct{$name}->{$key}->[1]}, $1;
+
+		# unknown
+		} else { push @errors, "Parse error: $_"; }
+	}
+
+	delete $ref->{raw};
+	$ref->{data} = \%strct;
+	carp $_ for @errors;
 }
 
 
@@ -183,6 +220,7 @@ sub DUMP {
 }
 
 1;
+
 
 
 =pod
@@ -206,6 +244,8 @@ Linux::SMBIOS - Interface to SMBIOS under Linux using dmidecode
 =head2 new
 
 =head2 probe
+
+=head2 parse
 
 =head1 SEE ALSO
 
