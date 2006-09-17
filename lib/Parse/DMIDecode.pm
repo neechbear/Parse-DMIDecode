@@ -151,9 +151,12 @@ sub keyword {
 				TRACE(" > $handle > $name > $key"); 
 				(my $comp_key = lc($key)) =~ s/\s+/-/g;
 				if ($comp_key eq $keyword) {
-					if (wantarray) {
+					TRACE(" > $handle > $name > $key > $comp_key > *MATCH*");
+					if (wantarray && @{$self->{parsed}->{handle}->{$handle}->{data}->{$name}->{$key}->[1]} >= 1) {
+						TRACE("[1]");
 						push @rtn, $self->{parsed}->{handle}->{$handle}->{data}->{$name}->{$key}->[1];
 					} else {
+						TRACE("[0]");
 						push @rtn, $self->{parsed}->{handle}->{$handle}->{data}->{$name}->{$key}->[0];
 					}
 				}
@@ -161,8 +164,10 @@ sub keyword {
 		}
 	}
 
+	DUMP('@rtn',\@rtn);
+
 	if (@rtn == 1) {
-		return wantarray ? @{$rtn[0]} : $rtn[0];
+		return wantarray ? ref($rtn[0]) eq 'ARRAY' ? @{$rtn[0]} : ($rtn[0]) : $rtn[0];
 	} elsif (@rtn > 1) {
 		carp "Multiple (". scalar(@rtn) .") matches found; unable to return a specific value";
 	}
