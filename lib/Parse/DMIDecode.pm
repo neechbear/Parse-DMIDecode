@@ -252,7 +252,7 @@ sub _parse_raw {
 		$name_indent = $indent if $l == 0;
 		if ($l == 1) {
 			if ($indent > $name_indent) { $key_indent = $indent; }
-			else { push @errors, "Parse error: key_indent ($indent) <= name_indent ($name_indent)"; }
+			else { push @errors, "Parser warning: key_indent ($indent) <= name_indent ($name_indent): $_"; }
 		}
 
 		# data
@@ -268,7 +268,7 @@ sub _parse_raw {
 			push @{$strct{$name}->{$key}->[1]}, $1;
 
 		# unknown
-		} else { push @errors, "Parse error: $_"; }
+		} else { push @errors, "Parser warning: $_"; }
 	}
 
 	delete $ref->{raw};
