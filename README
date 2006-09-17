@@ -1,0 +1,42 @@
+NAME
+    Parse::DMIDecode - Interface to SMBIOS under Linux using dmidecode
+
+SYNOPSIS
+     use strict;
+     use Parse::DMIDecode ();
+     
+ # Create an interface object
+     my $smbios = new Parse::DMIDecode;
+
+DESCRIPTION
+METHODS
+  new
+  probe
+  parse
+SEE ALSO
+    examples/*.pl, <http://www.nongnu.org/dmidecode/>,
+    <http://linux.dell.com/libsmbios/>,
+    <http://sourceforge.net/projects/x86info/>,
+    <http://www.dmtf.org/standards/smbios>, biosdecode(8), dmidecode(8),
+    vpddecode(8)
+
+VERSION
+    $Id$
+
+AUTHOR
+    Nicola Worthington <nicolaw@cpan.org>
+
+    <http://perlgirl.org.uk>
+
+    If you like this software, why not show your appreciation by sending the
+    author something nice from her Amazon wishlist? (
+    http://www.amazon.co.uk/gp/registry/1VZXC59ESWYK0?sort=priority )
+
+COPYRIGHT
+    Copyright 2006 Nicola Worthington.
+
+    This software is licensed under The Apache Software License, Version
+    2.0.
+
+    <http://www.apache.org/licenses/LICENSE-2.0>
+

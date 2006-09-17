@@ -24,10 +24,38 @@ package Parse::DMIDecode;
 
 use strict;
 use Carp qw(croak cluck confess carp);
-use vars qw($VERSION $DEBUG);
+use vars qw($VERSION $DEBUG @TYPES %GROUPS);
 
 $VERSION = '0.01' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
+
+@TYPES = ('BIOS', 'System', 'Base Board', 'Chassis', 'Processor',
+	'Memory Controller', 'Memory Module', 'Cache', 'Port Connector',
+	'System Slots', 'On Board Devices', 'OEM Strings',
+	'System Configuration Options', 'BIOS Language', 'Group Associations',
+	'System Event Log', 'Physical Memory Array', 'Memory Device',
+	'32-bit Memory Error', 'Memory Array Mapped Address',
+	'Memory Device Mapped Address', 'Built-in Pointing Device',
+	'Portable Battery', 'System Reset', 'Hardware Security',
+	'System Power Controls', 'Voltage Probe', 'Cooling Device',
+	'Temperature Probe', 'Electrical Current Probe',
+	'Out-of-band Remote Access', 'Boot Integrity Services', 'System Boot',
+	'64-bit Memory Error', 'Management Device', 'Management Device Component',
+	'Management Device Threshold Data', 'Memory Channel', 'IPMI Device',
+	'Power Supply');
+
+%GROUPS = (
+		'bios'      => [ qw(0 13) ],
+		'system'    => [ qw(1 12 15 23 32) ],
+		'baseboard' => [ qw(2 10) ],
+		'chassis'   => [ qw(3) ],
+		'processor' => [ qw(4) ],
+		'memory'    => [ qw(5 6 16 17) ],
+		'cache'     => [ qw(7) ],
+		'connector' => [ qw(8) ],
+		'slot'      => [ qw(9) ],
+	);
+
 
 
 #
@@ -39,7 +67,8 @@ sub new {
 	croak 'Odd number of elements passed when even was expected' if @_ % 2;
 	my $self = { @_ };
 
-	my @commands = qw(dmidecode biosdecode x86info);
+	#my @commands = qw(dmidecode biosdecode);
+	my @commands = qw(dmidecode);
 	my $validkeys = join('|',@commands);
 	cluck('Unrecognised parameters passed: '.
 		join(', ',grep(!/^$validkeys$/,keys %{$self})))
@@ -66,38 +95,78 @@ sub new {
 
 sub probe {
 	my $self = shift;
-	unless (ref $self && UNIVERSAL::isa($self, __PACKAGE__)) {
-		unshift @_, $self unless $self eq __PACKAGE__;
-		$self = new __PACKAGE__;
-	}
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
 
-	my $type = 'dmidecode';
-	my ($cmd) = $self->{$type} =~ /^([\/\.\_\-a-zA-Z0-9 >]+)$/;
+	my ($cmd) = $self->{dmidecode} =~ /^([\/\.\_\-a-zA-Z0-9 >]+)$/;
 	TRACE($cmd);
 
 	my $fh;
+	delete @ENV{qw(IFS CDPATH ENV BASH_ENV PATH)};
 	open($fh,'-|',$cmd) || croak "Unable to open file handle for command '$cmd': $!";
 	while (local $_ = <$fh>) {
-		$self->{raw}->{$type} .= $_;
+		$self->{raw} .= $_;
 	}
 	close($fh) || carp "Unable to close file handle for command '$cmd': $!";
 
-	return $self->parse($self->{raw}->{$type},$type);
+	return $self->parse($self->{raw});
 }
 
 
 sub parse {
 	my $self = shift;
-	unless (ref $self && UNIVERSAL::isa($self, __PACKAGE__)) {
-		unshift @_, $self unless $self eq __PACKAGE__;
-		$self = new __PACKAGE__;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+
+	$self->{parsed} = $self->_parse($_[0]);
+	DUMP('$self',$self);
+	return $self->{parsed}->{structures};
+}
+
+
+sub keyword {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+
+	return unless defined $self->{parsed}->{handle};
+
+	my $type = '';
+	my $keyword = shift || '';
+	($type,$keyword) = $keyword =~ /^\s*(\S+?)\-(\S+)\s*$/;
+	croak 'Missing or invalid keyword where keyword was expected'
+		unless defined $keyword && $keyword &&
+		defined $type && defined $GROUPS{$type};
+
+	my $dmitypes = '('. join('|',@{$GROUPS{$type}}) .')';
+	TRACE("$type -> $keyword -> $dmitypes");
+
+	my @rtn;
+
+	for my $handle (grep(/\*$dmitypes$/,keys %{$self->{parsed}->{handle}})) {
+		TRACE(" > $handle");
+		for my $name (keys %{$self->{parsed}->{handle}->{$handle}->{data}}) {
+			TRACE(" > $handle > $name");
+			for my $key (keys %{$self->{parsed}->{handle}->{$handle}->{data}->{$name}}) {
+				TRACE(" > $handle > $name > $key"); 
+				(my $comp_key = lc($key)) =~ s/\s+/-/g;
+				if ($comp_key eq $keyword) {
+					if (wantarray) {
+						push @rtn, $self->{parsed}->{handle}->{$handle}->{data}->{$name}->{$key}->[1];
+					} else {
+						push @rtn, $self->{parsed}->{handle}->{$handle}->{data}->{$name}->{$key}->[0];
+					}
+				}
+			}
+		}
 	}
 
-	my $type = $_[1] || 'dmidecode';
-	$self->{parsed}->{$type} = $self->_parse($_[0],$type);
-
-	DUMP('$self',$self);
-	return $self->{parsed}->{$type}->{structures};
+	if (@rtn == 1) {
+		return wantarray ? @{$rtn[0]} : $rtn[0];
+	} elsif (@rtn > 1) {
+		carp "Multiple (". scalar(@rtn) .") matches found; unable to return a specific value";
+	}
+	return;
 }
 
 
@@ -107,7 +176,7 @@ sub parse {
 #
 
 sub _parse {
-	my ($self,$str,$type) = @_;
+	my ($self,$str) = @_;
 	my %data;
 	my %strct;
 
@@ -129,7 +198,7 @@ sub _parse {
 		} elsif (/^Handle ([0-9A-Fx]+)(?:, DMI type (\d+), (\d+) bytes?\.?)?\s*$/) {
 			if (keys %strct) {
 				_parse_raw(\%strct);
-				$data{type}->{$strct{dmitype}} = {%strct};
+				$data{handle}->{"$strct{handle}*$strct{dmitype}"} = {%strct};
 				%strct = ();
 			}
 			$strct{handle} = $1;
@@ -147,12 +216,12 @@ sub _parse {
 
 	if (keys %strct) {
 		_parse_raw(\%strct);
-		$data{type}->{$strct{dmitype}} = {%strct};
+		$data{handle}->{"$strct{handle}*$strct{dmitype}"} = {%strct};
 	}
 
-#	carp sprintf("Only parsed %d structures when %d were expected",
-#			scalar(keys(%{$data{type}})), $data{structures})
-#		if scalar(keys(%{$data{type}})) != $data{structures};
+	carp sprintf("Only parsed %d structures when %d were expected",
+			scalar(keys(%{$data{handle}})), $data{structures})
+		if scalar(keys(%{$data{handle}})) != $data{structures};
 
 	return \%data;
 }
@@ -234,18 +303,38 @@ Parse::DMIDecode - Interface to SMBIOS under Linux using dmidecode
  use strict;
  use Parse::DMIDecode ();
  
- # Create an interface object
- my $smbios = new Parse::DMIDecode;
+ my $dmi = new Parse::DMIDecode;
+ $dmi->probe;
+ 
+ printf("System: %s, %s",
+         $dmi->keyword("system-manufacturer"),
+         $dmi->keyword("system-product-name"),
+     );
 
 =head1 DESCRIPTION
+
+This module provides an OO interface to SMBIOS information through
+the I<dmidecode> command which is known to work under a number of
+Linux, BSD and BeOS variants.
 
 =head1 METHODS
 
 =head2 new
 
+ my $dmi = Parse::DMIDecode->new(dmidecode => "/usr/sbin/dmidecode");
+
 =head2 probe
 
+ $dmi->probe;
+
 =head2 parse
+
+ my $raw = `dmidecode`;
+ $dmi->parse($raw);
+
+=head2 keyword
+
+ my $ = $dmi->keyword("system-serial-number");
 
 =head1 SEE ALSO
 
@@ -281,55 +370,6 @@ L<http://www.apache.org/licenses/LICENSE-2.0>
 
 =cut
 
-
-__DATA__
-
-static const u8 opt_type_bios[]={ 0, 13, 255 };
-static const u8 opt_type_system[]={ 1, 12, 15, 23, 32, 255 };
-static const u8 opt_type_baseboard[]={ 2, 10, 255 };
-static const u8 opt_type_chassis[]={ 3, 255 };
-static const u8 opt_type_processor[]={ 4, 255 };
-static const u8 opt_type_memory[]={ 5, 6, 16, 17, 255 };
-static const u8 opt_type_cache[]={ 7, 255 };
-static const u8 opt_type_connector[]={ 8, 255 };
-static const u8 opt_type_slot[]={ 9, 255 };
-
-static const struct type_keyword opt_type_keyword[]={
-	{ "bios", opt_type_bios },
-	{ "system", opt_type_system },
-	{ "baseboard", opt_type_baseboard },
-	{ "chassis", opt_type_chassis },
-	{ "processor", opt_type_processor },
-	{ "memory", opt_type_memory },
-	{ "cache", opt_type_cache },
-	{ "connector", opt_type_connector },
-	{ "slot", opt_type_slot },
-};
-
-static const struct string_keyword opt_string_keyword[]={
-	{ "bios-vendor", 0, 0x04, NULL, NULL },
-	{ "bios-version", 0, 0x05, NULL, NULL },
-	{ "bios-release-date", 0, 0x08, NULL, NULL },
-	{ "system-manufacturer", 1, 0x04, NULL, NULL },
-	{ "system-product-name", 1, 0x05, NULL, NULL },
-	{ "system-version", 1, 0x06, NULL, NULL },
-	{ "system-serial-number", 1, 0x07, NULL, NULL },
-	{ "system-uuid", 1, 0x08, NULL, dmi_system_uuid },
-	{ "baseboard-manufacturer", 2, 0x04, NULL, NULL },
-	{ "baseboard-product-name", 2, 0x05, NULL, NULL },
-	{ "baseboard-version", 2, 0x06, NULL, NULL },
-	{ "baseboard-serial-number", 2, 0x07, NULL, NULL },
-	{ "baseboard-asset-tag", 2, 0x08, NULL, NULL },
-	{ "chassis-manufacturer", 3, 0x04, NULL, NULL },
-	{ "chassis-type", 3, 0x05, dmi_chassis_type, NULL },
-	{ "chassis-version", 3, 0x06, NULL, NULL },
-	{ "chassis-serial-number", 3, 0x07, NULL, NULL },
-	{ "chassis-asset-tag", 3, 0x08, NULL, NULL },
-	{ "processor-family", 4, 0x06, dmi_processor_family, NULL },
-	{ "processor-manufacturer", 4, 0x07, NULL, NULL },
-	{ "processor-version", 4, 0x10, NULL, NULL },
-	{ "processor-frequency", 4, 0x16, NULL, dmi_processor_frequency },
-};
 
 __END__
 
