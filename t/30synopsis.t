@@ -3,7 +3,7 @@
 chdir('t') if -d 't';
 
 use strict;
-use Test::More tests => 10;
+use Test::More tests => 11;
 use lib qw(./lib ../lib);
 use Parse::DMIDecode qw();
 
@@ -11,6 +11,8 @@ my $data;
 
 my $dmi;
 ok($dmi = new Parse::DMIDecode,'new');
+
+ok($dmi->parse(slurp('dmidecode_epimetheus.txt')),'parse dmidecode_epimetheus.txt');
 
 ok($dmi->parse(slurp('dmidecode_eowyn.txt')),'parse dmidecode_eowyn.txt');
 ok($dmi->keyword('system-serial-number') eq 'L3M4102','keyword system-serial-number');

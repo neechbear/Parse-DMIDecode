@@ -23,39 +23,13 @@ package Parse::DMIDecode;
 # vim:ts=4:sw=4:tw=78
 
 use strict;
+use Parse::DMIDecode::Handle;
+use Parse::DMIDecode::Constants qw(@TYPES %GROUPS);
 use Carp qw(croak cluck confess carp);
-use vars qw($VERSION $DEBUG @TYPES %GROUPS);
+use vars qw($VERSION $DEBUG);
 
 $VERSION = '0.00' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
-
-@TYPES = ('BIOS', 'System', 'Base Board', 'Chassis', 'Processor',
-	'Memory Controller', 'Memory Module', 'Cache', 'Port Connector',
-	'System Slots', 'On Board Devices', 'OEM Strings',
-	'System Configuration Options', 'BIOS Language', 'Group Associations',
-	'System Event Log', 'Physical Memory Array', 'Memory Device',
-	'32-bit Memory Error', 'Memory Array Mapped Address',
-	'Memory Device Mapped Address', 'Built-in Pointing Device',
-	'Portable Battery', 'System Reset', 'Hardware Security',
-	'System Power Controls', 'Voltage Probe', 'Cooling Device',
-	'Temperature Probe', 'Electrical Current Probe',
-	'Out-of-band Remote Access', 'Boot Integrity Services', 'System Boot',
-	'64-bit Memory Error', 'Management Device', 'Management Device Component',
-	'Management Device Threshold Data', 'Memory Channel', 'IPMI Device',
-	'Power Supply');
-
-%GROUPS = (
-		'bios'      => [ qw(0 13) ],
-		'system'    => [ qw(1 12 15 23 32) ],
-		'baseboard' => [ qw(2 10) ],
-		'chassis'   => [ qw(3) ],
-		'processor' => [ qw(4) ],
-		'memory'    => [ qw(5 6 16 17) ],
-		'cache'     => [ qw(7) ],
-		'connector' => [ qw(8) ],
-		'slot'      => [ qw(9) ],
-	);
-
 
 
 #
@@ -67,24 +41,15 @@ sub new {
 	croak 'Odd number of elements passed when even was expected' if @_ % 2;
 	my $self = { @_ };
 
-	#my @commands = qw(dmidecode biosdecode);
-	my @commands = qw(dmidecode);
-	my $validkeys = join('|',@commands);
-	cluck('Unrecognised parameters passed: '.
-		join(', ',grep(!/^$validkeys$/,keys %{$self})))
-		if (grep(!/^$validkeys$/,keys %{$self}) && $^W);
+	#$self->{commands} = [qw(dmidecode biosdecode)];
+	$self->{commands} = [qw(dmidecode)];
+	my $validkeys = join('|',@{$self->{commands}});
+	my @invalidkeys = grep(!/^$validkeys$/,grep($_ ne 'commands',keys %{$self}));
+	cluck('Unrecognised parameters passed: '.join(', ',@invalidkeys)) if @invalidkeys && $^W;
 
-	for my $command (@commands) {
+	for my $command (@{$self->{commands}}) {
 		croak "Command $command '$self->{$command}'; file not found"
 			if defined $self->{$command} && !-f $self->{$command};
-	}
-
-	if (!defined $self->{dmidecode}) {
-		require File::Which;
-		for my $command (@commands) {
-			$self->{$command} = File::Which::which($command)
-				if !defined $self->{$command};
-		}
 	}
 
 	bless($self,$class);
@@ -97,6 +62,17 @@ sub probe {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+
+	eval {
+		if (!defined $self->{dmidecode}) {
+			require File::Which;
+			for my $command (@{$self->{commands}}) {
+				$self->{$command} = File::Which::which($command)
+					if !defined $self->{$command};
+			}
+		}
+	};
+	croak $@ if $@;
 
 	my ($cmd) = $self->{dmidecode} =~ /^([\/\.\_\-a-zA-Z0-9 >]+)$/;
 	TRACE($cmd);
@@ -124,6 +100,14 @@ sub parse {
 }
 
 
+sub handles {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return map { $self->{parsed}->{handle}->{$_}->{handle} } keys %{$self->{parsed}->{handle}};
+}
+
+
 sub keyword {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
@@ -142,22 +126,23 @@ sub keyword {
 	TRACE("$type -> $keyword -> $dmitypes");
 
 	my @rtn;
+	my $hdat = $self->{parsed}->{handle};
 
-	for my $handle (grep(/\*$dmitypes$/,keys %{$self->{parsed}->{handle}})) {
+	for my $handle (grep(/\*$dmitypes$/,keys %{$hdat})) {
 		TRACE(" > $handle");
-		for my $name (keys %{$self->{parsed}->{handle}->{$handle}->{data}}) {
+		for my $name (keys %{$hdat->{$handle}->{data}}) {
 			TRACE(" > $handle > $name");
-			for my $key (keys %{$self->{parsed}->{handle}->{$handle}->{data}->{$name}}) {
+			for my $key (keys %{$hdat->{$handle}->{data}->{$name}}) {
 				TRACE(" > $handle > $name > $key"); 
 				(my $comp_key = lc($key)) =~ s/\s+/-/g;
 				if ($comp_key eq $keyword) {
 					TRACE(" > $handle > $name > $key > $comp_key > *MATCH*");
-					if (wantarray && @{$self->{parsed}->{handle}->{$handle}->{data}->{$name}->{$key}->[1]} >= 1) {
+					if (wantarray && @{$hdat->{$handle}->{data}->{$name}->{$key}->[1]} >= 1) {
 						TRACE("[1]");
-						push @rtn, $self->{parsed}->{handle}->{$handle}->{data}->{$name}->{$key}->[1];
+						push @rtn, $hdat->{$handle}->{data}->{$name}->{$key}->[1];
 					} else {
 						TRACE("[0]");
-						push @rtn, $self->{parsed}->{handle}->{$handle}->{data}->{$name}->{$key}->[0];
+						push @rtn, $hdat->{$handle}->{data}->{$name}->{$key}->[0];
 					}
 				}
 			}
@@ -168,7 +153,7 @@ sub keyword {
 
 	if (@rtn == 1) {
 		return wantarray ? ref($rtn[0]) eq 'ARRAY' ? @{$rtn[0]} : ($rtn[0]) : $rtn[0];
-	} elsif (@rtn > 1) {
+	} elsif (@rtn > 1 && $^W) {
 		carp "Multiple (". scalar(@rtn) .") matches found; unable to return a specific value";
 	}
 	return;
@@ -182,14 +167,15 @@ sub keyword {
 
 sub _parse {
 	my ($self,$str) = @_;
-	my %data;
-	my %strct;
+	my %data = (handles => []);
 
-	for (split(/\n/,$str)) {
-		next if /^\s*$/;
-
-		# dmidecode headers
-		if (/^# dmidecode ([\d\.]+)\s*$/) {
+	my @lines = split(/\n/,$str);
+	my $i = 0;
+	for (; $i < @lines; $i++) {
+		local $_ = $lines[$i];
+		if (/^Handle [0-9A-Fx]+/) {
+			last;
+		} elsif (/^# dmidecode ([\d\.]+)\s*$/) {
 			$data{dmidecode} = $1;
 		} elsif (/^(\d+) structures occupying (\d+) bytes?\.\s*$/) {
 			$data{structures} = $1;
@@ -198,82 +184,25 @@ sub _parse {
 			$data{smbios} = $1;
 		} elsif (/^Table at ([0-9A-Fx]+)\.?\s*$/) {
 			$data{location} = $1;
-
-		# data
-		} elsif (/^Handle ([0-9A-Fx]+)(?:, DMI type (\d+), (\d+) bytes?\.?)?\s*$/) {
-			if (keys %strct) {
-				_parse_raw(\%strct);
-				$data{handle}->{"$strct{handle}*$strct{dmitype}"} = {%strct};
-				%strct = ();
-			}
-			$strct{handle} = $1;
-			$strct{dmitype} = $2 if defined $2;
-			$strct{bytes} = $3 if defined $3;
-		} elsif (defined $strct{handle} &&
-				/^\s*DMI type (\d+), (\d+) bytes?\.?\s*$/) {
-			$strct{dmitype} = $1 if defined $1;
-			$strct{bytes} = $2 if defined $2;
-		} else {
-			$strct{raw} = [] unless defined $strct{raw};
-			push @{$strct{raw}}, $_;
 		}
 	}
 
-	if (keys %strct) {
-		_parse_raw(\%strct);
-		$data{handle}->{"$strct{handle}*$strct{dmitype}"} = {%strct};
+	my $handle = '';
+	for (; $i < @lines; $i++) {
+		if ($lines[$i] =~ /^Handle [0-9A-Fx]+/) {
+			push @{$data{handles}}, Parse::DMIDecode::Handle->new($handle) if $handle;
+			$handle = "$lines[$i]\n";
+		} else {
+			$handle .= "$lines[$i]\n";
+		}
 	}
+	push @{$data{handles}}, Parse::DMIDecode::Handle->new($handle);
 
 	carp sprintf("Only parsed %d structures when %d were expected",
-			scalar(keys(%{$data{handle}})), $data{structures})
-		if scalar(keys(%{$data{handle}})) != $data{structures};
+			@{$data{handles}}, $data{structures}
+		) if @{$data{handles}} != $data{structures};
 
 	return \%data;
-}
-
-
-sub _parse_raw {
-	my $ref = shift;
-
-	my $name_indent = 0;
-	my $key_indent  = 0;
-	my $name = '';
-	my $key = '';
-
-	my @errors;
-	my %strct;
-
-	for (my $l = 0; $l < @{$ref->{raw}}; $l++) {
-		local $_ = $ref->{raw}->[$l];
-		my ($indent) = $_ =~ /^(\s+)/;
-		$indent = '' unless defined $indent;
-		$indent = length($indent);
-
-		$name_indent = $indent if $l == 0;
-		if ($l == 1) {
-			if ($indent > $name_indent) { $key_indent = $indent; }
-			else { push @errors, "Parser warning: key_indent ($indent) <= name_indent ($name_indent): $_"; }
-		}
-
-		# data
-		if (/^\s{$name_indent}(\S+.*?)\s*$/) {
-			$name = $1;
-			$strct{$name} = {};
-			$key = '';
-		} elsif ($name && /^\s{$key_indent}(\S.*?)(?::|: (\S+.*?))?\s*$/) {
-			$key = $1;
-			$strct{$name}->{$key}->[0] = $2;
-			$strct{$name}->{$key}->[1] = [] unless defined $strct{$name}->{$key}->[1];
-		} elsif ($name && $key && $indent > $key_indent && /^\s*(\S+.*?)\s*$/) {
-			push @{$strct{$name}->{$key}->[1]}, $1;
-
-		# unknown
-		} else { push @errors, "Parser warning: $_"; }
-	}
-
-	delete $ref->{raw};
-	$ref->{data} = \%strct;
-	carp $_ for @errors;
 }
 
 
@@ -334,12 +263,28 @@ Linux, BSD and BeOS variants.
 
 =head2 parse
 
- my $raw = `dmidecode`;
- $dmi->parse($raw);
+ my $raw = qx(sudo /usr/sbin/dmidecode);
+ $dmi->prase($raw);
 
 =head2 keyword
 
- my $ = $dmi->keyword("system-serial-number");
+ my $serial_number = $dmi->keyword("system-serial-number");
+
+=head2 keywords
+
+ my @keywords = $dmi->keywords;
+ my @bios_keywords = $dmi->keywords("bios");
+ 
+ for my $keyword (@bios_keywords) {
+     printf("%s => %s\n",
+             $keyword,
+             $dmi->keyword($keyword)
+         );
+ }
+
+=head2 handles
+
+ my @handles = $dmi->handles;
 
 =head1 SEE ALSO
 

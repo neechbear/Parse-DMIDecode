@@ -24,6 +24,7 @@ package Parse::DMIDecode::Handle;
 
 use strict;
 use Parse::DMIDecode::Constants qw(@TYPES %GROUPS);
+use Scalar::Util qw(refaddr);
 use Carp qw(croak cluck confess carp);
 use vars qw($VERSION $DEBUG);
 
@@ -61,6 +62,36 @@ sub new {
 	bless($self,$class);
 	DUMP($class,$self);
 	return $self;
+}
+
+
+sub raw {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+}
+
+
+sub bytes {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+}
+
+
+sub type { &dmitype; }
+sub dmitype {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+}
+
+
+sub address { &handle; }
+sub handle {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
 }
 
 
