@@ -136,7 +136,9 @@ sub _parse {
 
 	delete $ref->{raw};
 	$ref->{data} = \%strct;
-	carp $_ for @errors;
+	if ($^W && @errors) {
+		carp $_ for @errors;
+	}
 }
 
 
@@ -173,6 +175,18 @@ Parse::DMIDecode::Handle -
 =head1 METHODS
 
 =head2 new
+
+=head2 raw
+
+=head2 bytes
+
+=head2 handle
+
+=head2 address
+
+=head2 type
+
+=head2 dmitype
 
 =head1 SEE ALSO
 
