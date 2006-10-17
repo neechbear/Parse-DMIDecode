@@ -31,6 +31,8 @@ use vars qw($VERSION $DEBUG);
 $VERSION = '0.00' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 
+my $objstore = {};
+
 
 #
 # Methods
@@ -38,29 +40,34 @@ $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 
 sub new {
 	ref(my $class = shift) && croak 'Class name required';
-	my $self = {};
+	croak sprintf('%s elements passed when one was expected',
+			(@_ > 1 ? 'Multiple' : 'No')) if @_ != 1;
+
+	my $self = bless \(my $dummy), $class;
+	$objstore->{refaddr($self)} = {};
+	my $stor = $objstore->{refaddr($self)};
 
 	if (@_ && defined $_[0]) {
 		for (split(/\n/,$_[0])) {
 			if (/^Handle ([0-9A-Fx]+)(?:, DMI type (\d+), (\d+) bytes?\.?)?\s*$/) {
-				$self->{handle} = $1;
-				$self->{dmitype} = $2 if defined $2;
-				$self->{bytes} = $3 if defined $3;
-			} elsif (defined $self->{handle} &&
+				$stor->{handle} = $1;
+				$stor->{dmitype} = $2 if defined $2;
+				$stor->{bytes} = $3 if defined $3;
+			} elsif (defined $stor->{handle} &&
 					/^\s*DMI type (\d+), (\d+) bytes?\.?\s*$/) {
-				$self->{dmitype} = $1 if defined $1;
-				$self->{bytes} = $2 if defined $2;
+				$stor->{dmitype} = $1 if defined $1;
+				$stor->{bytes} = $2 if defined $2;
 			} else {
-				$self->{raw} = [] unless defined $self->{raw};
-				push @{$self->{raw}}, $_;
+				$stor->{raw} = [] unless defined $stor->{raw};
+				push @{$stor->{raw}}, $_;
 			}
 		}
-		_parse($self);
-		$self->{raw} = $_[0];
+		_parse($stor) if $stor->{raw};
+		$stor->{raw} = $_[0];
 	}
 
-	bless($self,$class);
-	DUMP($class,$self);
+	DUMP('$self',$self);
+	DUMP('$stor',$stor);
 	return $self;
 }
 
@@ -69,6 +76,7 @@ sub raw {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return $objstore->{refaddr($self)}->{raw};
 }
 
 
@@ -76,6 +84,7 @@ sub bytes {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return $objstore->{refaddr($self)}->{bytes};
 }
 
 
@@ -84,6 +93,7 @@ sub dmitype {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return $objstore->{refaddr($self)}->{dmitype};
 }
 
 
@@ -92,11 +102,13 @@ sub handle {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return $objstore->{refaddr($self)}->{handle};
 }
 
 
 sub _parse {
 	my $ref = shift;
+	return unless defined $ref->{raw};
 
 	my $name_indent = 0;
 	my $key_indent  = 0;
