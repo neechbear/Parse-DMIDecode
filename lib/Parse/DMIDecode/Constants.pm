@@ -33,7 +33,7 @@ use vars qw($VERSION $DEBUG
 @EXPORT_OK = qw(@TYPES %GROUPS);
 %EXPORT_TAGS = (all => \@EXPORT_OK);
 
-$VERSION = '0.00' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
+$VERSION = '0.01' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 
 @TYPES = ( # Description                    Index Group(s)
