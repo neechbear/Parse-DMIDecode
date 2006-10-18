@@ -102,7 +102,56 @@ sub parse {
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
 
 	my $stor = $objstore->{refaddr($self)};
-	$stor->{parsed} = $self->_parse(join('',@_));
+	my %data = (handles => []);
+
+	my @lines;
+	for (@_) {
+		push @lines, split(/\n/,$_);
+	}
+
+	my $i = 0;
+	for (; $i < @lines; $i++) {
+		local $_ = $lines[$i];
+		if (/^Handle [0-9A-Fx]+/) {
+			last;
+		} elsif (/^SYSID present\.\s*/) {
+			# No-op
+		} elsif (/^# dmidecode ([\d\.]+)\s*$/) {
+			$data{dmidecode} = $1;
+		} elsif (/^(\d+) structures occupying (\d+) bytes?\.\s*$/) {
+			$data{structures} = $1;
+			$data{bytes} = $2;
+		} elsif (/^DMI ([\d\.]+) present\.?\s*$/) {
+			$data{dmi} = $1;
+		} elsif (/^SMBIOS ([\d\.]+) present\.?\s*$/) {
+			$data{smbios} = $1;
+		} elsif (/^(?:DMI )?[Tt]able at ([0-9A-Fx]+)\.?\s*$/) {
+			$data{location} = $1;
+		}
+	}
+
+	for (qw(dmidecode structures bytes dmi smbios location)) {
+		$data{$_} = undef if !exists $data{$_};
+	}
+
+	my $handle = '';
+	for (; $i < @lines; $i++) {
+		if ($lines[$i] =~ /^Handle [0-9A-Fx]+/) {
+			push @{$data{handles}}, Parse::DMIDecode::Handle->new($handle) if $handle;
+			$handle = "$lines[$i]\n";
+		} else {
+			$handle .= "$lines[$i]\n";
+		}
+	}
+	push @{$data{handles}}, Parse::DMIDecode::Handle->new($handle);
+
+	carp sprintf("Only parsed %d structures when %d were expected",
+			@{$data{handles}}, $data{structures}
+		) if @{$data{handles}} != $data{structures};
+
+	$stor->{parsed} = \%data;
+	DUMP('$stor->{parsed}',$stor->{parsed});
+
 	return $stor->{parsed}->{structures};
 }
 
@@ -131,13 +180,44 @@ sub get_handles {
 }
 
 
+sub structures {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return $objstore->{refaddr($self)}->{parsed}->{structures};
+}
+
+
+sub table_location {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return $objstore->{refaddr($self)}->{parsed}->{location};
+}
+
+
+sub smbios_version {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return $objstore->{refaddr($self)}->{parsed}->{smbios};
+}
+
+
+sub dmidecode_version {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return $objstore->{refaddr($self)}->{parsed}->{dmidecode};
+}
+
+
 sub handle_addresses {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
-
-	my $stor = $objstore->{refaddr($self)};
-	return map { $_->handle } @{$stor->{parsed}->{handles}};
+	return map { $_->handle }
+		@{$objstore->{refaddr($self)}->{parsed}->{handles}};
 }
 
 
@@ -191,52 +271,6 @@ sub keyword {
 #		carp "Multiple (". scalar(@rtn) .") matches found; unable to return a specific value";
 #	}
 #	return;
-}
-
-
-
-#
-# Private methods
-#
-
-sub _parse {
-	my ($self,$str) = @_;
-	my %data = (handles => []);
-
-	my @lines = split(/\n/,$str);
-	my $i = 0;
-	for (; $i < @lines; $i++) {
-		local $_ = $lines[$i];
-		if (/^Handle [0-9A-Fx]+/) {
-			last;
-		} elsif (/^# dmidecode ([\d\.]+)\s*$/) {
-			$data{dmidecode} = $1;
-		} elsif (/^(\d+) structures occupying (\d+) bytes?\.\s*$/) {
-			$data{structures} = $1;
-			$data{bytes} = $2;
-		} elsif (/^SMBIOS ([\d\.]+) present\.?\s*$/) {
-			$data{smbios} = $1;
-		} elsif (/^Table at ([0-9A-Fx]+)\.?\s*$/) {
-			$data{location} = $1;
-		}
-	}
-
-	my $handle = '';
-	for (; $i < @lines; $i++) {
-		if ($lines[$i] =~ /^Handle [0-9A-Fx]+/) {
-			push @{$data{handles}}, Parse::DMIDecode::Handle->new($handle) if $handle;
-			$handle = "$lines[$i]\n";
-		} else {
-			$handle .= "$lines[$i]\n";
-		}
-	}
-	push @{$data{handles}}, Parse::DMIDecode::Handle->new($handle);
-
-	carp sprintf("Only parsed %d structures when %d were expected",
-			@{$data{handles}}, $data{structures}
-		) if @{$data{handles}} != $data{structures};
-
-	return \%data;
 }
 
 
@@ -325,6 +359,26 @@ Linux, BSD and BeOS variants.
 =head2 handle_addresses
 
  my @addresses = $dmi->handle_addresses;
+
+=head2 get_handles
+
+ use Parse::DMIDecode::Constants qw(@TYPES);
+ 
+ for my $handle ($dmi->get_handles( group => "memory" )) {
+     printf(">> Found handle at %s (%s):\n%s\n",
+             $handle->address,
+             $TYPES[$handle->dmitype],
+             $handle->raw
+         );
+ }
+
+=head2 smbios_version
+
+=head2 dmidecode_version
+
+=head2 table_location
+
+=head2 structures
 
 =head1 SEE ALSO
 
