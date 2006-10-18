@@ -9,7 +9,7 @@ use lib qw(./lib ../lib);
 use Parse::DMIDecode qw();
 
 my @files = glob('testdata/*');
-plan tests => (scalar(@files)*15) + 1;
+plan tests => (scalar(@files)*17) + 1;
 
 my $dmi;
 ok($dmi = new Parse::DMIDecode,'new');
@@ -18,6 +18,8 @@ for my $file (@files) {
 	ok($dmi->parse(slurp($file)),$file);
 	ok($dmi->smbios_version >= 2.0,"$file \$dmi->smbios_version");
 	ok($dmi->dmidecode_version >= 2.0,"$file \$dmi->dmidecode_version");
+	ok($dmi->table_location,"$file \$dmi->table_location");
+	ok($dmi->structures == scalar($dmi->handle_addresses),"$file \$dmi->structures == \$dmi->handle_addresses");
 	for my $dmitype (qw(0 1 2 3)) {
 		my @handles;
 		ok(
