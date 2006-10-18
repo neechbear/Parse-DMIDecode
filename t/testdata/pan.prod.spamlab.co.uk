@@ -1,0 +1,463 @@
+SYSID present.
+SMBIOS 2.3 present.
+DMI 2.3 present.
+87 structures occupying 3165 bytes.
+DMI table at 0x000F9A10.
+Handle 0xDA00
+	DMI type 218, 11 bytes.
+b2 00 17 00 0e 20 00                            	..... .         
+Handle 0x0000
+	DMI type 0, 20 bytes.
+	BIOS Information Block
+		Vendor: Dell Computer Corporation
+		Version: A02
+		Release: 01/19/2005
+		BIOS base: 0xF0000
+		ROM size: 960K
+		Capabilities:
+			Flags: 0x001F00007DE9DA90
+Handle 0x0100
+	DMI type 1, 25 bytes.
+	System Information Block
+		Vendor: Dell Computer Corporation
+		Product: PowerEdge 1850
+		Version: 
+		Serial Number: 5Z2W981
+Handle 0x0200
+	DMI type 2, 9 bytes.
+	Board Information Block
+		Vendor: Dell Computer Corporation
+		Product: 0U9971
+		Version: A03
+		Serial Number: ..CN1374057F00AU.
+Handle 0x0300
+	DMI type 3, 17 bytes.
+	Chassis Information Block
+		Vendor: Dell Computer Corporation
+		Chassis Type: Rack Mount Chassis
+			Lock present
+		Version: 
+		Serial Number: 5Z2W981
+		Asset Tag: 
+Handle 0x0400
+	DMI type 4, 35 bytes.
+	Processor
+		Socket Designation: PROC_1
+		Processor Type: Central Processor
+		Processor Family: 
+		Processor Manufacturer: Intel
+		Processor Version: 
+		Serial Number: 
+		Asset Tag: 
+		Vendor Part Number: 
+Handle 0x0401
+	DMI type 4, 35 bytes.
+	Processor
+		Socket Designation: PROC_2
+		Processor Type: Central Processor
+		Processor Family: 
+		Processor Manufacturer: Intel
+		Processor Version: 
+		Serial Number: 
+		Asset Tag: 
+		Vendor Part Number: 
+Handle 0x0700
+	DMI type 7, 19 bytes.
+	Cache
+		Socket: 
+		L1 Internal Cache: write-through
+		L1 Cache Size: 16K
+		L1 Cache Maximum: 16K
+		L1 Cache Type: Unknown 
+Handle 0x0701
+	DMI type 7, 19 bytes.
+	Cache
+		Socket: 
+		L2 Internal Cache: write-back
+		L2 Cache Size: 2048K
+		L2 Cache Maximum: 1024K
+		L2 Cache Type: Unknown 
+Handle 0x0702
+	DMI type 7, 19 bytes.
+	Cache
+		Socket: 
+		L3 Internal Cache: write-back
+		L3 Cache Size: 0K
+		L3 Cache Maximum: 0K
+		L3 Cache Type: Unknown 
+Handle 0x0703
+	DMI type 7, 19 bytes.
+	Cache
+		Socket: 
+		L1 Internal Cache: write-through
+		L1 Cache Size: 16K
+		L1 Cache Maximum: 0K
+		L1 Cache Type: Unknown 
+Handle 0x0704
+	DMI type 7, 19 bytes.
+	Cache
+		Socket: 
+		L2 Internal Cache: write-back
+		L2 Cache Size: 2048K
+		L2 Cache Maximum: 0K
+		L2 Cache Type: Unknown 
+Handle 0x0705
+	DMI type 7, 19 bytes.
+	Cache
+		Socket: 
+		L3 Internal Cache: write-back
+		L3 Cache Size: 0K
+		L3 Cache Maximum: 0K
+		L3 Cache Type: Unknown 
+Handle 0x0800
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: SCSIA
+		Internal Connector Type: 68 Pin Dual Inline
+		External Designator: 
+		External Connector Type: None
+		Port Type: SCSI Wide
+Handle 0x0801
+	DMI type 126, 9 bytes.
+	Inactive
+Handle 0x0802
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: DB-15 pin female
+		Port Type: Video Port
+Handle 0x0803
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: DB-15 pin female
+		Port Type: Video Port
+Handle 0x0804
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: Access Bus (USB)
+		Port Type: USB
+Handle 0x0805
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: Access Bus (USB)
+		Port Type: USB
+Handle 0x0806
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: Access Bus (USB)
+		Port Type: USB
+Handle 0x0807
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: Access Bus (USB)
+		Port Type: USB
+Handle 0x0808
+	DMI type 126, 9 bytes.
+	Inactive
+Handle 0x0809
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: RJ-45
+		Port Type: Network Port
+Handle 0x080A
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: RJ-45
+		Port Type: Network Port
+Handle 0x080B
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: DB-9 pin male
+		Port Type: Serial Port 16650A Compatible
+Handle 0x080C
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: PS/2
+		Port Type: Keyboard Port
+Handle 0x080D
+	DMI type 8, 9 bytes.
+	Port Connector
+		Internal Designator: 
+		Internal Connector Type: None
+		External Designator: 
+		External Connector Type: PS/2
+		Port Type: Mouse Port
+Handle 0x0900
+	DMI type 9, 13 bytes.
+	Card Slot
+		Slot: PCI1
+		Type: 64bit Long PC98/C24
+		Status: Available.
+		Slot Features: 3.3v 
+Handle 0x0901
+	DMI type 9, 13 bytes.
+	Card Slot
+		Slot: PCI2
+		Type: 64bit Long PC98/C24
+		Status: Available.
+		Slot Features: 3.3v 
+Handle 0x0902
+	DMI type 126, 13 bytes.
+	Inactive
+Handle 0x0903
+	DMI type 126, 13 bytes.
+	Inactive
+Handle 0x0904
+	DMI type 126, 13 bytes.
+	Inactive
+Handle 0x0905
+	DMI type 126, 13 bytes.
+	Inactive
+Handle 0x0906
+	DMI type 126, 13 bytes.
+	Inactive
+Handle 0x0907
+	DMI type 9, 13 bytes.
+	Card Slot
+		Slot: RAC_CONN
+		Type: CPU Slot 
+		Status: Available.
+		Slot Features: 5v 3.3v 
+Handle 0x0A00
+	DMI type 10, 12 bytes.
+	On Board Devices Information
+		Description: LSI Logic 53C1030 Ultra 320 SCSI : Enabled
+		Type: 
+		Description: ATI RADEON 7000 PCI Video : Enabled
+		Type: 
+		Description: Intel 82541EI Gigabit Ethernet : Enabled
+		Type: 
+		Description: Intel 82541EI Gigabit Ethernet : Enabled
+		Type: 
+Handle 0x0B00
+	DMI type 11, 5 bytes.
+	OEM Data
+		Dell System
+		1[016C]
+		3[1.5]
+		5[0000]
+		7[803B]
+		8[McAfee, Inc.]
+		9[WebShield]
+		10[A01]
+		11[A02]
+		12[www.mcafeesecurity.com]
+Handle 0x7E00
+	DMI type 126, 49 bytes.
+	Inactive
+Handle 0x0C00
+	DMI type 12, 5 bytes.
+	Configuration Information
+		NVRAM_CLR:  Clear user settable NVRAM areas and set defaults
+		PASSWD:  Close to enable password
+Handle 0x0D00
+	DMI type 13, 22 bytes.
+	BIOS Language Information
+Handle 0x1000
+	DMI type 16, 15 bytes.
+	Physical Memory Array
+Handle 0x1100
+	DMI type 17, 27 bytes.
+	Memory Device
+Handle 0x1101
+	DMI type 17, 27 bytes.
+	Memory Device
+Handle 0x1102
+	DMI type 17, 27 bytes.
+	Memory Device
+Handle 0x1103
+	DMI type 17, 27 bytes.
+	Memory Device
+Handle 0x1104
+	DMI type 17, 27 bytes.
+	Memory Device
+Handle 0x1105
+	DMI type 17, 27 bytes.
+	Memory Device
+Handle 0x1300
+	DMI type 19, 15 bytes.
+	Memory Array Mapped Address
+Handle 0x1301
+	DMI type 126, 15 bytes.
+	Inactive
+Handle 0x1400
+	DMI type 20, 19 bytes.
+	Memory Device Mapped Address
+Handle 0x1401
+	DMI type 20, 19 bytes.
+	Memory Device Mapped Address
+Handle 0x1402
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1403
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1404
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1405
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1406
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1407
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1408
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1409
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x140A
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x140B
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x140C
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x140D
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1420
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1421
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1424
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1425
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1428
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1429
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1430
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1431
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1434
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1435
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1438
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x1439
+	DMI type 126, 19 bytes.
+	Inactive
+Handle 0x2000
+	DMI type 32, 11 bytes.
+	System Boot Information
+Handle 0x2600
+	DMI type 38, 18 bytes.
+01 15 20 ff a9 0c 00 00 00 00 00 00 40 00       	.. .........@.  
+Handle 0xD000
+	DMI type 208, 10 bytes.
+01 05 fe 00 6c 01                               	....l.          
+Handle 0xD100
+	DMI type 126, 12 bytes.
+	Inactive
+Handle 0xD200
+	DMI type 210, 12 bytes.
+f8 03 04 03 06 80 04 05                         	........        
+Handle 0xD400
+	DMI type 212, 182 bytes.
+70 00 71 00 00 10 2d 2e 03 00 11 7f 80 04 00 11 	p.q...-.........
+7f 00 00 00 25 9f 00 00 00 25 9f 20 00 00 25 9f 	....%....%. ..%.
+40 00 00 25 9f 60 00 00 25 7f 00 00 00 25 7f 80 	@..%.`..%....%..
+0f 00 25 f8 00 11 00 25 f8 01 12 00 25 f8 02 2e 	..%....%....%...
+40 25 f8 03 2f 40 25 f8 04 00 00 25 f8 05 42 00 	@%../@%....%..B.
+11 fe 01 43 00 11 fe 00 00 00 11 9f 20 00 00 11 	...C........ ...
+9f 00 b3 00 11 9f 00 b5 00 11 9f 20 b4 00 11 9f 	........... ....
+40 31 40 11 fb 00 32 40 11 fb 04 9d 00 11 fd 02 	@1@...2@........
+9e 00 11 fd 00 9f 00 26 fe 01 a0 00 26 fe 00 51 	.......&....&..Q
+00 26 3f 00 52 00 26 3f 40 53 00 26 3f 80 54 00 	.&?.R.&?@S.&?.T.
+26 3f c0 28 40 26 df 20 29 40 26 df 00 ff ff 00 	&?.(@&. )@&.....
+00 00                                           	..              
+Handle 0xD401
+	DMI type 212, 237 bytes.
+70 00 71 00 03 40 59 6d 6b 00 78 7f 80 6c 00 78 	p.q..@Ymk.x..l.x
+7f 00 58 00 78 fa 05 59 00 78 fa 00 5c 00 78 bf 	..X.x..Y.x..\.x.
+40 5d 00 78 bf 00 04 80 78 fd 02 01 a0 78 fd 00 	@].x....x....x..
+19 00 55 e7 00 1a 00 55 e7 08 1b 00 55 e7 10 ff 	..U....U....U...
+00 55 9f 40 fe 00 55 9f 20 fd 00 55 9f 00 1e 00 	.U.@..U. ..U....
+55 fd 00 50 00 55 fd 02 8a 00 55 fe 01 8b 00 55 	U..P.U....U....U
+fe 00 b6 00 59 f7 08 b7 00 59 f7 00 00 00 59 fb 	....Y....Y....Y.
+04 00 00 59 fb 00 cd 00 59 fd 02 ce 00 59 fd 00 	...Y....Y....Y..
+00 00 59 fe 01 00 00 59 fe 00 bf 00 53 fe 00 c0 	..Y....Y....S...
+00 53 fe 01 33 40 53 e7 00 34 40 53 e7 08 35 40 	.S..3@S..4@S..5@
+53 e7 10 36 40 53 e7 18 1a 40 53 fd 02 1b 40 53 	S..6@S...@S...@S
+fd 00 1c 40 53 fb 04 1d 40 53 fb 00 6e 00 58 fc 	...@S...@S..n.X.
+01 2d 00 58 fc 02 2e 00 58 fc 00 22 40 58 ef 10 	.-.X....X.."@X..
+23 40 58 ef 00 bb 00 58 f3 04 bc 00 58 f3 08 ba 	#@X....X....X...
+00 58 f3 00 ff ff 00 00 00                      	.X.......       
+Handle 0xD402
+	DMI type 212, 47 bytes.
+70 00 71 00 03 40 59 6d d8 00 55 7f 80 d9 00 55 	p.q..@Ym..U....U
+7f 00 00 c0 5c 00 0a 03 c0 67 00 05 83 00 76 00 	....\....g....v.
+00 84 00 77 00 00 ff ff 00 00 00                	...w.......     
+Handle 0xD403
+	DMI type 212, 182 bytes.
+72 00 73 00 00 40 5d 5e c7 00 41 fc 00 c8 00 41 	r.s..@]^..A....A
+fc 01 c9 00 41 fc 02 28 01 4a fc 00 29 01 4a fc 	....A..(.J..).J.
+01 2a 01 4a fc 02 2a 40 7e fb 00 2b 40 7e fb 04 	.*.J..*@~..+@~..
+d1 00 7e fe 00 d2 00 7e fe 01 d3 00 00 00 02 d4 	..~....~........
+00 06 00 02 00 90 2b 00 00 01 90 2c 00 00 00 00 	......+....,....
+49 fb 00 db 00 49 ef 00 00 00 49 fb 04 00 00 49 	I....I....I....I
+ef 10 00 00 49 fc 00 00 00 49 fc 01 00 00 49 fc 	....I....I....I.
+02 00 00 49 7f 00 00 00 49 7f 80 de 00 76 fe 01 	...I....I....v..
+26 40 42 fe 01 27 40 42 fe 00 37 40 42 fb 00 38 	&@B..'@B..7@B..8
+40 42 fb 04 00 00 47 fe 01 00 00 47 fe 00 a1 00 	@B....G....G....
+48 fc 02 a3 00 48 fc 01 a2 00 48 fc 00 ff ff 00 	H....H....H.....
+00 00                                           	..              
+Handle 0xD800
+	DMI type 216, 9 bytes.
+01 02 01 00 00                                  	.....           
+Handle 0xDE00
+	DMI type 222, 15 bytes.
+01 04 ff ff 00 00 00 00 00 00 00                	...........     
+Handle 0x7F00
+	DMI type 127, 4 bytes.
+	End-of-Table
