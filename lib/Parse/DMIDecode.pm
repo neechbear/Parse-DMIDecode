@@ -228,49 +228,6 @@ sub keyword {
 
 	my $stor = $objstore->{refaddr($self)};
 	return unless defined $stor->{parsed}->{handles};
-
-#	my $type = '';
-#	my $keyword = shift || '';
-#	($type,$keyword) = $keyword =~ /^\s*(\S+?)\-(\S+)\s*$/;
-#	croak 'Missing or invalid keyword where keyword was expected'
-#		unless defined $keyword && $keyword &&
-#		defined $type && defined $GROUPS{$type};
-#
-#	my $dmitypes = '('. join('|',@{$GROUPS{$type}}) .')';
-#	TRACE("$type -> $keyword -> $dmitypes");
-#
-#	my @rtn;
-#	my $hdat = $stor->{parsed}->{handles};
-#
-#	for my $handle (grep(/\*$dmitypes$/,keys %{$hdat})) {
-#		TRACE(" > $handle");
-#		for my $name (keys %{$hdat->{$handle}->{data}}) {
-#			TRACE(" > $handle > $name");
-#			for my $key (keys %{$hdat->{$handle}->{data}->{$name}}) {
-#				TRACE(" > $handle > $name > $key"); 
-#				(my $comp_key = lc($key)) =~ s/\s+/-/g;
-#				if ($comp_key eq $keyword) {
-#					TRACE(" > $handle > $name > $key > $comp_key > *MATCH*");
-#					if (wantarray && @{$hdat->{$handle}->{data}->{$name}->{$key}->[1]} >= 1) {
-#						TRACE("[1]");
-#						push @rtn, $hdat->{$handle}->{data}->{$name}->{$key}->[1];
-#					} else {
-#						TRACE("[0]");
-#						push @rtn, $hdat->{$handle}->{data}->{$name}->{$key}->[0];
-#					}
-#				}
-#			}
-#		}
-#	}
-#
-#	DUMP('@rtn',\@rtn);
-#
-#	if (@rtn == 1) {
-#		return wantarray ? ref($rtn[0]) eq 'ARRAY' ? @{$rtn[0]} : ($rtn[0]) : $rtn[0];
-#	} elsif (@rtn > 1 && $^W) {
-#		carp "Multiple (". scalar(@rtn) .") matches found; unable to return a specific value";
-#	}
-#	return;
 }
 
 

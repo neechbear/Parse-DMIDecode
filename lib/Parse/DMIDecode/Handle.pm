@@ -73,6 +73,16 @@ sub new {
 }
 
 
+sub keyword {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	croak sprintf('%s elements passed when one was expected',
+		(@_ > 1 ? 'Multiple' : 'No')) if @_ != 1;
+	return $objstore->{refaddr($self)}->{keywords}->{$_[0]};
+}
+
+
 sub keywords {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
@@ -221,6 +231,10 @@ Parse::DMIDecode::Handle -
 =head2 type
 
 =head2 dmitype
+
+=head2 keywords
+
+=head2 keyword
 
 =head1 SEE ALSO
 
