@@ -26,11 +26,11 @@ use strict;
 require Exporter;
 use vars qw($VERSION $DEBUG
 		@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS
-		@TYPES %GROUPS);
+		@TYPES %GROUPS %TYPE2GROUP);
 
 @ISA = qw(Exporter);
 @EXPORT = qw();
-@EXPORT_OK = qw(@TYPES %GROUPS);
+@EXPORT_OK = qw(@TYPES %GROUPS %TYPE2GROUP);
 %EXPORT_TAGS = (all => \@EXPORT_OK);
 
 $VERSION = '0.01' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
@@ -90,6 +90,13 @@ $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 		'connector' => [ qw(8) ],
 		'slot'      => [ qw(9) ],
 	);
+
+%TYPE2GROUP = ();
+for my $group (keys %GROUPS) {
+	for my $dmitype (@{$GROUPS{$group}}) {
+		$TYPE2GROUP{$dmitype} = $group;
+	}
+}
 
 
 1;

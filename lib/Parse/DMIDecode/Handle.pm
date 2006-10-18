@@ -23,7 +23,7 @@ package Parse::DMIDecode::Handle;
 # vim:ts=4:sw=4:tw=78
 
 use strict;
-use Parse::DMIDecode::Constants qw(@TYPES %GROUPS);
+use Parse::DMIDecode::Constants qw(@TYPES %GROUPS %TYPE2GROUP);
 use Scalar::Util qw(refaddr);
 use Carp qw(croak cluck confess carp);
 use vars qw($VERSION $DEBUG);
@@ -62,6 +62,7 @@ sub new {
 				push @{$stor->{raw}}, $_;
 			}
 		}
+		$stor->{keywords} = {};
 		_parse($stor) if $stor->{raw};
 		$stor->{raw} = $_[0];
 	}
@@ -69,6 +70,14 @@ sub new {
 	DUMP('$self',$self);
 	DUMP('$stor',$stor);
 	return $self;
+}
+
+
+sub keywords {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return sort(keys(%{$objstore->{refaddr($self)}->{keywords}}));
 }
 
 
@@ -135,15 +144,28 @@ sub _parse {
 			$name = $1;
 			$strct{$name} = {};
 			$key = '';
+
 		} elsif ($name && /^\s{$key_indent}(\S.*?)(?::|: (\S+.*?))?\s*$/) {
 			$key = $1;
 			$strct{$name}->{$key}->[0] = $2;
 			$strct{$name}->{$key}->[1] = [] unless defined $strct{$name}->{$key}->[1];
+			$ref->{keywords}->{_keyword($ref,$key)} = $strct{$name}->{$key}->[0]
+				if defined $TYPE2GROUP{$ref->{dmitype}}
+
 		} elsif ($name && $key && $indent > $key_indent && /^\s*(\S+.*?)\s*$/) {
 			push @{$strct{$name}->{$key}->[1]}, $1;
+			$ref->{keywords}->{_keyword($ref,$key)} = $strct{$name}->{$key}->[1]
+				if defined $TYPE2GROUP{$ref->{dmitype}} && !defined $strct{$name}->{$key}->[0];
 
 		# unknown
 		} else { push @errors, "Parser warning: $_"; }
+	}
+
+	sub _keyword {
+		my ($ref,$key) = @_;
+		(my $keyword = $key) =~ s/[^a-z0-9]/-/gi;
+		$keyword = lc("$TYPE2GROUP{$ref->{dmitype}}-$keyword");
+		return $keyword;
 	}
 
 	delete $ref->{raw};
