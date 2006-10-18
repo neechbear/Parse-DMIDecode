@@ -221,13 +221,36 @@ sub handle_addresses {
 }
 
 
-sub keyword {
+sub keywords {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
 
+	my %keywords;
 	my $stor = $objstore->{refaddr($self)};
-	return unless defined $stor->{parsed}->{handles};
+	for my $handle (@{$stor->{parsed}->{handles}}) {
+		for my $keyword ($handle->keywords) {
+			$keywords{$keyword} = 1;
+		}
+	}
+
+	return sort(keys(%keywords));
+}
+
+
+sub keyword {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	croak sprintf('%s elements passed when one was expected',
+		(@_ > 1 ? 'Multiple' : 'No')) if @_ != 1;
+
+	my $stor = $objstore->{refaddr($self)};
+	for my $handle (@{$stor->{parsed}->{handles}}) {
+		if (grep($_ eq $_[0],$handle->keywords)) {
+			return $handle->keyword($_[0]);
+		}
+	}
 }
 
 
@@ -268,12 +291,15 @@ Parse::DMIDecode - Interface to SMBIOS under Linux using dmidecode
  use strict;
  use Parse::DMIDecode ();
  
- my $dmi = new Parse::DMIDecode;
- $dmi->probe;
- 
+ my $decoder = new Parse::DMIDecode;
+ $decoder->probe; # Actively probe using dmidecode
+  
+ # Manually supply your own dmidecode output to be parsed
+ # $decoder->parse(qx(sudo /usr/sbin/dmidecode));
+  
  printf("System: %s, %s",
-         $dmi->keyword("system-manufacturer"),
-         $dmi->keyword("system-product-name"),
+         $decoder->keyword("system-manufacturer"),
+         $decoder->keyword("system-product-name"),
      );
 
 =head1 DESCRIPTION
@@ -282,46 +308,51 @@ This module provides an OO interface to SMBIOS information through
 the I<dmidecode> command which is known to work under a number of
 Linux, BSD and BeOS variants.
 
+This module is still actively under development, is no not yet
+feature complete and still needs to be fully documented. There is
+a possibility accessor method names may change before the final
+release.
+
 =head1 METHODS
 
 =head2 new
 
- my $dmi = Parse::DMIDecode->new(dmidecode => "/usr/sbin/dmidecode");
+ my $decoder = Parse::DMIDecode->new(dmidecode => "/usr/sbin/dmidecode");
 
 =head2 probe
 
- $dmi->probe;
+ $decoder->probe;
 
 =head2 parse
 
  my $raw = qx(sudo /usr/sbin/dmidecode);
- $dmi->prase($raw);
+ $decoder->prase($raw);
 
 =head2 keyword
 
- my $serial_number = $dmi->keyword("system-serial-number");
+ my $serial_number = $decoder->keyword("system-serial-number");
 
 =head2 keywords
 
- my @keywords = $dmi->keywords;
- my @bios_keywords = $dmi->keywords("bios");
+ my @keywords = $decoder->keywords;
+ my @bios_keywords = $decoder->keywords("bios");
  
  for my $keyword (@bios_keywords) {
      printf("%s => %s\n",
              $keyword,
-             $dmi->keyword($keyword)
+             $decoder->keyword($keyword)
          );
  }
 
 =head2 handle_addresses
 
- my @addresses = $dmi->handle_addresses;
+ my @addresses = $decoder->handle_addresses;
 
 =head2 get_handles
 
  use Parse::DMIDecode::Constants qw(@TYPES);
  
- for my $handle ($dmi->get_handles( group => "memory" )) {
+ for my $handle ($decoder->get_handles( group => "memory" )) {
      printf(">> Found handle at %s (%s):\n%s\n",
              $handle->address,
              $TYPES[$handle->dmitype],
@@ -331,11 +362,19 @@ Linux, BSD and BeOS variants.
 
 =head2 smbios_version
 
+ my $smbios_version = $decoder->smbios_version;
+
 =head2 dmidecode_version
+
+ my $dmidecode_version = $decoder->dmidecode_version;
 
 =head2 table_location
 
+ my $memory_address = $decoder->table_location;
+
 =head2 structures
+
+ my $total_structures = $decoder->structures;
 
 =head1 SEE ALSO
 
