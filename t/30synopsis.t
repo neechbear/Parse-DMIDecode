@@ -10,7 +10,7 @@ use Parse::DMIDecode qw();
 my $data;
 
 my $dmi;
-ok($dmi = new Parse::DMIDecode,'new');
+ok($dmi = Parse::DMIDecode->new(nowarnings => 1),'new');
 
 ok($dmi->parse(slurp('dmidecode_example1.txt')),'parse dmidecode_example1.txt');
 ok($dmi->keyword('bios-vendor') eq 'Dell Inc.','keyword bios-vendor');
@@ -26,7 +26,7 @@ ok($dmi->keyword('system-manufacturer') eq 'LENOVO','keyword system-serial-manuf
 
 ok($dmi->parse(slurp('dmidecode_example4.txt')),'parse dmidecode_example4.txt');
 
-ok($dmi->parse(slurp('dmidecode_example5.txt')),'parse dmidecode_example5.txt');
+ok($dmi->parse(slurp('dmidecode_example4.txt')),'parse dmidecode_example5.txt');
 
 sub slurp {
 	my $file = shift;
