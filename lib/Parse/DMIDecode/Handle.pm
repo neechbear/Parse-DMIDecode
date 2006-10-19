@@ -1,7 +1,7 @@
 ############################################################
 #
 #   $Id$
-#   Parse::DMIDecode::Handle - Handle object
+#   Parse::DMIDecode::Handle - SMBIOS Structure Handle Object Class
 #
 #   Copyright 2006 Nicola Worthington
 #
@@ -162,7 +162,7 @@ sub _parse {
 			$strct{$name} = {};
 			$key = '';
 
-		} elsif ($name && /^\s{$key_indent}(\S.*?)(?::|: (\S+.*?))?\s*$/) {
+		} elsif ($name && /^\s{$key_indent}(\S.*?)(?::|:\s+(\S+.*?))?\s*$/) {
 			$key = $1;
 			$strct{$name}->{$key}->[0] = $2;
 			$strct{$name}->{$key}->[1] = [] unless defined $strct{$name}->{$key}->[1];
@@ -219,7 +219,7 @@ sub DUMP {
 
 =head1 NAME
 
-Parse::DMIDecode::Handle - 
+Parse::DMIDecode::Handle - SMBIOS Structure Handle Object Class
 
 =head1 SYNOPSIS
 
@@ -233,13 +233,17 @@ Parse::DMIDecode::Handle -
 
 =head2 bytes
 
+=head2 address
+
 =head2 handle
 
-=head2 address
+Alias for address.
+
+=head2 dmitype
 
 =head2 type
 
-=head2 dmitype
+Alias for dmitype.
 
 =head2 keywords
 
