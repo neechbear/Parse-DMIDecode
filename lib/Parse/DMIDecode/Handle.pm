@@ -40,15 +40,23 @@ my $objstore = {};
 
 sub new {
 	ref(my $class = shift) && croak 'Class name required';
-	croak sprintf('%s elements passed when one was expected',
-			(@_ > 1 ? 'Multiple' : 'No')) if @_ != 1;
+	croak 'Odd number of elements passed when even was expected' if @_ % 2;
+#	croak sprintf('%s elements passed when one was expected',
+#			(@_ > 1 ? 'Multiple' : 'No')) if @_ != 1;
 
 	my $self = bless \(my $dummy), $class;
-	$objstore->{refaddr($self)} = {};
+	$objstore->{refaddr($self)} = {@_};
 	my $stor = $objstore->{refaddr($self)};
 
-	if (@_ && defined $_[0]) {
-		for (split(/\n/,$_[0])) {
+	my @validkeys = qw(raw nowarnings);
+	my $validkeys = join('|',@validkeys);
+	my @invalidkeys = grep(!/^$validkeys$/,keys %{$stor});
+	delete $stor->{$_} for @invalidkeys;
+	cluck('Unrecognised parameters passed: '.join(', ',@invalidkeys))
+		if @invalidkeys && $^W;
+
+	if (defined $stor->{raw}) {
+		for (split(/\n/,$stor->{raw})) {
 			if (/^Handle ([0-9A-Fx]+)(?:, DMI type (\d+), (\d+) bytes?\.?)?\s*$/) {
 				$stor->{handle} = $1;
 				$stor->{dmitype} = $2 if defined $2;
@@ -58,13 +66,12 @@ sub new {
 				$stor->{dmitype} = $1 if defined $1;
 				$stor->{bytes} = $2 if defined $2;
 			} else {
-				$stor->{raw} = [] unless defined $stor->{raw};
-				push @{$stor->{raw}}, $_;
+				$stor->{raw_entries} = [] unless defined $stor->{raw_entries};
+				push @{$stor->{raw_entries}}, $_;
 			}
 		}
 		$stor->{keywords} = {};
-		_parse($stor) if $stor->{raw};
-		$stor->{raw} = $_[0];
+		_parse($stor) if $stor->{raw_entries};
 	}
 
 	DUMP('$self',$self);
@@ -127,7 +134,7 @@ sub handle {
 
 sub _parse {
 	my $ref = shift;
-	return unless defined $ref->{raw};
+	return unless defined $ref->{raw_entries};
 
 	my $name_indent = 0;
 	my $key_indent  = 0;
@@ -137,8 +144,8 @@ sub _parse {
 	my @errors;
 	my %strct;
 
-	for (my $l = 0; $l < @{$ref->{raw}}; $l++) {
-		local $_ = $ref->{raw}->[$l];
+	for (my $l = 0; $l < @{$ref->{raw_entries}}; $l++) {
+		local $_ = $ref->{raw_entries}->[$l];
 		my ($indent) = $_ =~ /^(\s+)/;
 		$indent = '' unless defined $indent;
 		$indent = length($indent);
@@ -165,10 +172,12 @@ sub _parse {
 		} elsif ($name && $key && $indent > $key_indent && /^\s*(\S+.*?)\s*$/) {
 			push @{$strct{$name}->{$key}->[1]}, $1;
 			$ref->{keywords}->{_keyword($ref,$key)} = $strct{$name}->{$key}->[1]
-				if defined $TYPE2GROUP{$ref->{dmitype}} && !defined $strct{$name}->{$key}->[0];
+				if defined $TYPE2GROUP{$ref->{dmitype}};# && !defined $strct{$name}->{$key}->[0];
 
 		# unknown
-		} else { push @errors, "Parser warning: $_"; }
+		} else {
+			push @errors, "Parser warning: $_";
+		}
 	}
 
 	sub _keyword {
@@ -178,9 +187,9 @@ sub _parse {
 		return $keyword;
 	}
 
-	delete $ref->{raw};
 	$ref->{data} = \%strct;
-	if ($^W && @errors) {
+	#if ($^W && @errors) {
+	if (@errors && !$ref->{nowarnings}) {
 		carp $_ for @errors;
 	}
 }

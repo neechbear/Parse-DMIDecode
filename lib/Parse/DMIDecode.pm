@@ -44,12 +44,13 @@ sub new {
 	croak 'Odd number of elements passed when even was expected' if @_ % 2;
 
 	my $self = bless \(my $dummy), $class;
-	$objstore->{refaddr($self)} = {};
+	$objstore->{refaddr($self)} = {@_};
 	my $stor = $objstore->{refaddr($self)};
 
 	$stor->{commands} = [qw(dmidecode)];
-	my $validkeys = join('|',@{$stor->{commands}});
+	my $validkeys = join('|','nowarnings',@{$stor->{commands}});
 	my @invalidkeys = grep(!/^$validkeys$/,grep($_ ne 'commands',keys %{$stor}));
+	delete $stor->{$_} for @invalidkeys;
 	cluck('Unrecognised parameters passed: '.join(', ',@invalidkeys))
 		if @invalidkeys && $^W;
 
@@ -134,16 +135,23 @@ sub parse {
 		$data{$_} = undef if !exists $data{$_};
 	}
 
-	my $handle = '';
+	my $raw_handle_data = '';
 	for (; $i < @lines; $i++) {
 		if ($lines[$i] =~ /^Handle [0-9A-Fx]+/) {
-			push @{$data{handles}}, Parse::DMIDecode::Handle->new($handle) if $handle;
-			$handle = "$lines[$i]\n";
+			push @{$data{handles}}, Parse::DMIDecode::Handle->new(
+					raw => $raw_handle_data,
+					nowarnings => $stor->{nowarnings}
+				) if $raw_handle_data;
+			$raw_handle_data = "$lines[$i]\n";
 		} else {
-			$handle .= "$lines[$i]\n";
+			$raw_handle_data .= "$lines[$i]\n";
 		}
 	}
-	push @{$data{handles}}, Parse::DMIDecode::Handle->new($handle);
+
+	push @{$data{handles}}, Parse::DMIDecode::Handle->new(
+			raw => $raw_handle_data,
+			nowarnings => $stor->{nowarnings}
+		) if $raw_handle_data;
 
 	carp sprintf("Only parsed %d structures when %d were expected",
 			@{$data{handles}}, $data{structures}
