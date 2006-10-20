@@ -140,15 +140,35 @@ sub _parse {
 	my $key_indent  = 0;
 	my $name = '';
 	my $key = '';
+	my $legacy_dmidecode_binary_data = 0;
 
 	my @errors;
 	my %strct;
+
+#	DUMP('$ref->{raw_entries}',$ref->{raw_entries});
 
 	for (my $l = 0; $l < @{$ref->{raw_entries}}; $l++) {
 		local $_ = $ref->{raw_entries}->[$l];
 		my ($indent) = $_ =~ /^(\s+)/;
 		$indent = '' unless defined $indent;
 		$indent = length($indent);
+
+		# Old version of dmidecode - we don't support this very well
+#Handle 0xD402
+#|   DMI type 212, 47 bytes.
+#70 00 71 00 03 40 59 6d d8 00 55 7f 80 d9 00 55 |   p.q..@Ym..U....U
+#7f 00 00 c0 5c 00 0a 03 c0 67 00 05 83 00 76 00 |   ....\....g....v.
+#00 84 00 77 00 00 ff ff 00 00 00                |   ...w.......
+		if ((!$name || $legacy_dmidecode_binary_data) && /^(([a-f0-9]{2} )+)\s*\t[[:print:]]{1,16}\s*$/) {
+			my $data = $1;
+			chop $data;
+			$name = 'OEM-specific Type';
+			$key = 'Header and Data';
+			$legacy_dmidecode_binary_data = 1;
+			$strct{$name}->{$key}->[1] = [] unless defined $strct{$name}->{$key}->[1];
+			push @{$strct{$name}->{$key}->[1]}, $data;
+			next;
+		}
 
 		$name_indent = $indent if $l == 0;
 		if ($l == 1) {
