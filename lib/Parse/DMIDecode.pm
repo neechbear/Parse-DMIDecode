@@ -362,6 +362,8 @@ release.
 
  use Parse::DMIDecode::Constants qw(@TYPES);
  
+ # Available groups to query: bios, system, baseboard,
+ #    chassis, processor, memory, cache, connector, slot
  for my $handle ($decoder->get_handles( group => "memory" )) {
      printf(">> Found handle at %s (%s):\n%s\n",
              $handle->address,
