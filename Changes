@@ -1,7 +1,12 @@
-Version 0.02 - 20th October 2006
+Version 0.02 - 21th October 2006
     + Added better support for older versions of dmidecode
       binary output parsing.
     + Improved examples/test.pl.
+    + Added examples/synopsis2.pl from the synopsis of
+      Parse::DMIDecode::Handle.
+    + Allow get_handles() method to be called without any
+      qualifying paramaters so to return *All* handle
+      objects.
 
 Version 0.01 - 19th October 2006
     + Pre-release.
