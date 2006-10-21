@@ -82,10 +82,12 @@ sub probe {
 	};
 	croak $@ if $@;
 
-	my ($cmd) = $stor->{dmidecode} =~ /^([\/\.\_\-a-zA-Z0-9 >]+)$/;
+	my ($cmd) = $stor->{dmidecode} =~ /^([\/\.\_\-a-zA-Z0-9 ]+)$/;
 	TRACE($cmd);
+	croak "dmidecode command '$cmd' does not exist; bum!" if !-f $cmd;
 
 	my $fh;
+	local %ENV = %ENV;
 	delete @ENV{qw(IFS CDPATH ENV BASH_ENV PATH)};
 	open($fh,'-|',$cmd) || croak "Unable to open file handle for command '$cmd': $!";
 	while (local $_ = <$fh>) {
@@ -327,7 +329,10 @@ release.
 
 =head2 new
 
- my $decoder = Parse::DMIDecode->new(dmidecode => "/usr/sbin/dmidecode");
+ my $decoder = Parse::DMIDecode->new(
+                     dmidecode => "/usr/sbin/dmidecode"),
+                     nowarnings => 1
+                 );
 
 =head2 probe
 
@@ -379,6 +384,10 @@ release.
 =head2 dmidecode_version
 
  my $dmidecode_version = $decoder->dmidecode_version;
+
+Returns the version number of the copy of I<dmidecode> that was used
+to create the source data that was parsed. This value may not be available
+when using older versions of I<dmidecode>.
 
 =head2 table_location
 
