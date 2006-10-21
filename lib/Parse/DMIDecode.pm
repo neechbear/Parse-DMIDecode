@@ -173,9 +173,11 @@ sub get_handles {
 	my %param = @_;
 	my $stor = $objstore->{refaddr($self)};
 	my @handles;
+	my $getall = !keys(%param);
 
 	for my $handle (@{$stor->{parsed}->{handles}}) {
-		if ((defined $param{address} && $handle->address eq $param{address}) ||
+		if ($getall ||
+			(defined $param{address} && $handle->address eq $param{address}) ||
 			(defined $param{dmitype} && $handle->dmitype == $param{dmitype}) ||
 			(defined $param{group} && defined $GROUPS{$param{group}} &&
 			 grep($_ == $handle->dmitype,@{$GROUPS{$param{group}}}))

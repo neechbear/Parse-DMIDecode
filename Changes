@@ -1,3 +1,8 @@
+Version 0.02 - 20th October 2006
+    + Added better support for older versions of dmidecode
+      binary output parsing.
+    + Improved examples/test.pl.
+
 Version 0.01 - 19th October 2006
     + Pre-release.
     + Created Parse::DMIDecode::Handle objects for each

@@ -12,7 +12,7 @@ my @files = glob('testdata/*');
 plan tests => (scalar(@files)*16) + 1;
 
 my $dmi;
-ok($dmi = Parse::DMIDecode->new(nowarnings => 1),'new');
+ok($dmi = Parse::DMIDecode->new(nowarnings => 0),'new');
 
 for my $file (@files) {
 	ok($dmi->parse(slurp($file)),$file);
