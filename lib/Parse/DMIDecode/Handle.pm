@@ -347,7 +347,7 @@ Alias for address.
 
 Alias for dmitype.
 
-=head2 descriptions
+=head2 description
 
  my $description = $handle->description;
 
