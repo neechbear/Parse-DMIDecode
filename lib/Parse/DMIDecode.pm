@@ -29,7 +29,7 @@ use Parse::DMIDecode::Constants qw(@TYPES %GROUPS);
 use Carp qw(croak cluck carp);
 use vars qw($VERSION $DEBUG);
 
-$VERSION = '0.02' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
+$VERSION = '0.03' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 
 my $objstore = {};
@@ -377,6 +377,9 @@ release.
          );
  }
 
+See L<Parse::DMIDecode::Handle> for accessor method documentation
+for handle objects.
+
 =head2 smbios_version
 
  my $smbios_version = $decoder->smbios_version;
@@ -399,6 +402,8 @@ when using older versions of I<dmidecode>.
 
 =head1 SEE ALSO
 
+L<Parse::DMIDecode::Handle>,
+L<Parse::DMIDecode::Constants>,
 examples/*.pl,
 L<http://www.nongnu.org/dmidecode/>,
 L<http://linux.dell.com/libsmbios/>,
