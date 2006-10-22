@@ -16,7 +16,7 @@ $build = Module::Build->new(
 		requires => {
 			'Carp'         => 0, # 1.04
 			'Scalar::Util' => 0,
-			'Storable'     => 0,
+			#'Storable'     => 0,
 		},
 
 		build_requires => {

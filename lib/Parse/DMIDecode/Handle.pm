@@ -25,7 +25,7 @@ package Parse::DMIDecode::Handle;
 use strict;
 use Parse::DMIDecode::Constants qw(@TYPES %GROUPS %TYPE2GROUP);
 use Scalar::Util qw(refaddr);
-use Storable qw(dclone);
+#use Storable qw(dclone);
 use Carp qw(croak cluck confess carp);
 use vars qw($VERSION $DEBUG);
 
