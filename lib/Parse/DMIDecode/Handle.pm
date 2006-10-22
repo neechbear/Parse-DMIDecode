@@ -78,7 +78,7 @@ sub new {
 		$objstore->{refaddr($self)} = _deepcopy($stor);
 		my $stor = $objstore->{refaddr($self)};
 
-		$stor->{description} = $name;
+		$stor->{description} = substr($name,4);
 		$stor->{data} = $data->{$name} || {};
 		$stor->{keywords} = $keywords->{$name} || {};
 
@@ -180,6 +180,7 @@ sub _parse {
 	my $name_indent = 0;
 	my $key_indent  = 0;
 	my $name = '';
+	my $name_cnt = 0;
 	my $key = '';
 	my $legacy_dmidecode_binary_data = 0;
 
@@ -204,7 +205,7 @@ sub _parse {
 		if ((!$name || $legacy_dmidecode_binary_data) && /^(([a-f0-9]{2} )+)\s*\t[[:print:]]{1,16}\s*$/) {
 			my $data = $1;
 			chop $data;
-			$name = 'OEM-specific Type';
+			$name ||= sprintf('%03d|%s',++$name_cnt,'OEM-specific Type');
 			$key = 'Header and Data';
 			$legacy_dmidecode_binary_data = 1;
 			$data{$name}->{$key}->[1] = [] unless defined $data{$name}->{$key}->[1];
@@ -220,7 +221,7 @@ sub _parse {
 
 		# data
 		if (/^\s{$name_indent}(\S+.*?)\s*$/) {
-			$name = $1;
+			$name = sprintf('%03d|%s',++$name_cnt,$1);
 			$data{$name} = {};
 			$key = '';
 

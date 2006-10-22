@@ -60,9 +60,10 @@ if (defined $opts->{K}) {
 
 # Print some information about specific structure handles
 for my $handle ($decoder->get_handles( group => $opts->{g} )) {
-	printf(">>> Found handle at %s (%s):\n >> Keywords: %s\n%s\n",
+	printf(">>> Found handle at %s (%s):\n >> Description: %s\n >> Keywords: %s\n%s\n",
 			$handle->address,
 			$TYPES[$handle->dmitype],
+			$handle->description,
 			join(', ',$handle->keywords),
 			$handle->raw
 		);
