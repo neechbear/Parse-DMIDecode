@@ -26,7 +26,7 @@ use strict;
 use Scalar::Util qw(refaddr);
 use Parse::DMIDecode::Handle;
 use Parse::DMIDecode::Constants qw(@TYPES %GROUPS);
-use Carp qw(croak cluck confess carp);
+use Carp qw(croak cluck carp);
 use vars qw($VERSION $DEBUG);
 
 $VERSION = '0.02' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
@@ -156,8 +156,8 @@ sub parse {
 		) if $raw_handle_data;
 
 	carp sprintf("Only parsed %d structures when %d were expected",
-			@{$data{handles}}, $data{structures}
-		) if @{$data{handles}} != $data{structures};
+			scalar(@{$data{handles}}), $data{structures}
+		) if scalar(@{$data{handles}}) < $data{structures};
 
 	$stor->{parsed} = \%data;
 	DUMP('$stor->{parsed}',$stor->{parsed});
@@ -282,8 +282,8 @@ sub DUMP {
 	return unless $DEBUG;
 	eval {
 		require Data::Dumper;
-		$Data::Dumper::Indent = 2;
-		$Data::Dumper::Terse = 1;
+		local $Data::Dumper::Indent = 2;
+		local $Data::Dumper::Terse = 1;
 		carp(shift().': '.Data::Dumper::Dumper(shift()));
 	}
 }

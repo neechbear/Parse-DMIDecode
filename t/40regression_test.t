@@ -9,17 +9,23 @@ use lib qw(./lib ../lib);
 use Parse::DMIDecode qw();
 
 my @files = glob('testdata/*');
-plan tests => (scalar(@files)*16) + 1;
+plan tests => (scalar(@files)*17) + 1;
 
 my $dmi;
 ok($dmi = Parse::DMIDecode->new(nowarnings => 0),'new');
 
 for my $file (@files) {
 	ok($dmi->parse(slurp($file)),$file);
+
 	ok($dmi->smbios_version >= 2.0,"$file \$dmi->smbios_version");
 	#ok($dmi->dmidecode_version >= 2.0,"$file \$dmi->dmidecode_version");
 	ok($dmi->table_location,"$file \$dmi->table_location");
-	ok($dmi->structures == scalar($dmi->handle_addresses),"$file \$dmi->structures == \$dmi->handle_addresses");
+
+	my @handle_addresses = $dmi->handle_addresses;
+	my @uniq_handle_addresses = uniq(@handle_addresses); 
+	ok(scalar(@handle_addresses) >= $dmi->structures,"$file \$dmi->handle_addresses >= \$dmi->handle_structures");
+	ok(scalar(@uniq_handle_addresses) == $dmi->structures,"$file unique handle address == \$dmi->handle_structures");
+
 	for my $dmitype (qw(0 1 2 3)) {
 		my @handles;
 		ok(
@@ -29,6 +35,12 @@ for my $file (@files) {
 		ok($handles[0]->dmitype == $dmitype,"$file \$handle->dmitype");
 		ok($handles[0]->bytes =~ /^\d+$/,"$file \$handle->bytes");
 	}
+}
+
+sub uniq {
+	my %uniq;
+	$uniq{$_} = undef for @_;
+	return sort keys %uniq;
 }
 
 sub slurp {

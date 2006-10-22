@@ -27,7 +27,10 @@ DESCRIPTION
 
 METHODS
   new
-     my $decoder = Parse::DMIDecode->new(dmidecode => "/usr/sbin/dmidecode");
+     my $decoder = Parse::DMIDecode->new(
+                         dmidecode => "/usr/sbin/dmidecode"),
+                         nowarnings => 1
+                     );
 
   probe
      $decoder->probe;
@@ -71,6 +74,10 @@ METHODS
 
   dmidecode_version
      my $dmidecode_version = $decoder->dmidecode_version;
+
+    Returns the version number of the copy of *dmidecode* that was used to
+    create the source data that was parsed. This value may not be available
+    when using older versions of *dmidecode*.
 
   table_location
      my $memory_address = $decoder->table_location;

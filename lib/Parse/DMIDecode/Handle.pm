@@ -42,13 +42,8 @@ my $objstore = {};
 sub new {
 	ref(my $class = shift) && croak 'Class name required';
 	croak 'Odd number of elements passed when even was expected' if @_ % 2;
-#	croak sprintf('%s elements passed when one was expected',
-#			(@_ > 1 ? 'Multiple' : 'No')) if @_ != 1;
 
-	my $self = bless \(my $dummy), $class;
-	$objstore->{refaddr($self)} = {@_};
-	my $stor = $objstore->{refaddr($self)};
-
+	my $stor = {@_};
 	my @validkeys = qw(raw nowarnings);
 	my $validkeys = join('|',@validkeys);
 	my @invalidkeys = grep(!/^$validkeys$/,keys %{$stor});
@@ -56,28 +51,57 @@ sub new {
 	cluck('Unrecognised parameters passed: '.join(', ',@invalidkeys))
 		if @invalidkeys && $^W;
 
-	if (defined $stor->{raw}) {
-		for (split(/\n/,$stor->{raw})) {
-			if (/^Handle ([0-9A-Fx]+)(?:, DMI type (\d+), (\d+) bytes?\.?)?\s*$/) {
-				$stor->{handle} = $1;
-				$stor->{dmitype} = $2 if defined $2;
-				$stor->{bytes} = $3 if defined $3;
-			} elsif (defined $stor->{handle} &&
-					/^\s*DMI type (\d+), (\d+) bytes?\.?\s*$/) {
-				$stor->{dmitype} = $1 if defined $1;
-				$stor->{bytes} = $2 if defined $2;
-			} else {
-				$stor->{raw_entries} = [] unless defined $stor->{raw_entries};
-				push @{$stor->{raw_entries}}, $_;
-			}
+	return unless defined defined $stor->{raw};
+	for (split(/\n/,$stor->{raw})) {
+		if (/^Handle ([0-9A-Fx]+)(?:, DMI type (\d+), (\d+) bytes?\.?)?\s*$/) {
+			$stor->{handle} = $1;
+			$stor->{dmitype} = $2 if defined $2;
+			$stor->{bytes} = $3 if defined $3;
+		} elsif (defined $stor->{handle} &&
+				/^\s*DMI type (\d+), (\d+) bytes?\.?\s*$/) {
+			$stor->{dmitype} = $1 if defined $1;
+			$stor->{bytes} = $2 if defined $2;
+		} else {
+			$stor->{raw_entries} = [] unless defined $stor->{raw_entries};
+			push @{$stor->{raw_entries}}, $_;
 		}
-		$stor->{keywords} = {};
-		_parse($stor) if $stor->{raw_entries};
 	}
 
-	DUMP('$self',$self);
-	DUMP('$stor',$stor);
-	return $self;
+	my ($data,$keywords) = _parse($stor)
+		if $stor->{raw_entries};
+
+	my @objects;
+	for my $name (keys(%{$data})) {
+		my $self = bless \(my $dummy), $class;
+		push @objects, $self;
+
+		$objstore->{refaddr($self)} = _deepcopy($stor);
+		my $stor = $objstore->{refaddr($self)};
+
+		$stor->{description} = $name;
+		$stor->{data} = $data->{$name} || {};
+		$stor->{keywords} = $keywords->{$name} || {};
+
+		DUMP('$self',$self);
+		DUMP('$stor',$stor);
+	}
+
+	DUMP('\@objects',\@objects);
+	return @objects;
+}
+
+
+sub _deepcopy{
+	my $this = shift;
+	if (!ref($this)) {
+		$this;
+	} elsif (ref($this) eq 'ARRAY') {
+		[ map _deepcopy($_), @{$this} ];
+	} elsif (ref($this) eq 'HASH'){
+		scalar { map { $_ => _deepcopy($this->{$_}) } keys %{$this} };
+	} else {
+		confess "What type is $_?";
+	}
 }
 
 
@@ -144,7 +168,8 @@ sub _parse {
 	my $legacy_dmidecode_binary_data = 0;
 
 	my @errors;
-	my %strct;
+	my %data;
+	my %keywords;
 
 #	DUMP('$stor->{raw_entries}',$stor->{raw_entries});
 
@@ -166,8 +191,8 @@ sub _parse {
 			$name = 'OEM-specific Type';
 			$key = 'Header and Data';
 			$legacy_dmidecode_binary_data = 1;
-			$strct{$name}->{$key}->[1] = [] unless defined $strct{$name}->{$key}->[1];
-			push @{$strct{$name}->{$key}->[1]}, $data;
+			$data{$name}->{$key}->[1] = [] unless defined $data{$name}->{$key}->[1];
+			push @{$data{$name}->{$key}->[1]}, $data;
 			next;
 		}
 
@@ -180,20 +205,20 @@ sub _parse {
 		# data
 		if (/^\s{$name_indent}(\S+.*?)\s*$/) {
 			$name = $1;
-			$strct{$name} = {};
+			$data{$name} = {};
 			$key = '';
 
 		} elsif ($name && /^\s{$key_indent}(\S.*?)(?::|:\s+(\S+.*?))?\s*$/) {
 			$key = $1;
-			$strct{$name}->{$key}->[0] = $2;
-			$strct{$name}->{$key}->[1] = [] unless defined $strct{$name}->{$key}->[1];
-			$stor->{keywords}->{_keyword($stor,$key)} = $strct{$name}->{$key}->[0]
+			$data{$name}->{$key}->[0] = $2;
+			$data{$name}->{$key}->[1] = [] unless defined $data{$name}->{$key}->[1];
+			$keywords{$name}->{_keyword($stor,$key)} = $data{$name}->{$key}->[0]
 				if defined $TYPE2GROUP{$stor->{dmitype}}
 
 		} elsif ($name && $key && $indent > $key_indent && /^\s*(\S+.*?)\s*$/) {
-			push @{$strct{$name}->{$key}->[1]}, $1;
-			$stor->{keywords}->{_keyword($stor,$key)} = $strct{$name}->{$key}->[1]
-				if defined $TYPE2GROUP{$stor->{dmitype}};# && !defined $strct{$name}->{$key}->[0];
+			push @{$data{$name}->{$key}->[1]}, $1;
+			$keywords{$name}->{_keyword($stor,$key)} = $data{$name}->{$key}->[1]
+				if defined $TYPE2GROUP{$stor->{dmitype}};# && !defined $data{$name}->{$key}->[0];
 
 		# unknown
 		} else {
@@ -208,11 +233,12 @@ sub _parse {
 		return $keyword;
 	}
 
-	$stor->{data} = \%strct;
 	#if ($^W && @errors) {
 	if (@errors && !$stor->{nowarnings}) {
 		carp $_ for @errors;
 	}
+
+	return (\%data,\%keywords);
 }
 
 
@@ -226,8 +252,8 @@ sub DUMP {
 	return unless $DEBUG;
 	eval {
 		require Data::Dumper;
-		$Data::Dumper::Indent = 2;
-		$Data::Dumper::Terse = 1;
+		local $Data::Dumper::Indent = 2;
+		local $Data::Dumper::Terse = 1;
 		carp(shift().': '.Data::Dumper::Dumper(shift()));
 	}
 }
