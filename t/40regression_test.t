@@ -9,10 +9,10 @@ use lib qw(./lib ../lib);
 use Parse::DMIDecode qw();
 
 my @files = glob('testdata/*');
-plan tests => (scalar(@files)*17) + 1;
+plan tests => (scalar(@files)*21) + 1;
 
 my $dmi;
-ok($dmi = Parse::DMIDecode->new(nowarnings => 0),'new');
+ok($dmi = Parse::DMIDecode->new(nowarnings => 1),'new');
 
 for my $file (@files) {
 	ok($dmi->parse(slurp($file)),$file);
@@ -34,6 +34,7 @@ for my $file (@files) {
 		);
 		ok($handles[0]->dmitype == $dmitype,"$file \$handle->dmitype");
 		ok($handles[0]->bytes =~ /^\d+$/,"$file \$handle->bytes");
+		ok($handles[0]->description =~ /^\S.{4,64}$/,"$file \$handle->description");
 	}
 }
 

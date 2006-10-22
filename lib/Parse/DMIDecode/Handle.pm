@@ -105,6 +105,14 @@ sub _deepcopy{
 }
 
 
+sub parsed_structures {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return _deepcopy($objstore->{refaddr($self)}->{data});
+}
+
+
 sub keyword {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
@@ -128,6 +136,14 @@ sub raw {
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
 	return $objstore->{refaddr($self)}->{raw};
+}
+
+
+sub description {
+	my $self = shift;
+	croak 'Not called as a method by parent object'
+		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
+	return $objstore->{refaddr($self)}->{description};
 }
 
 
@@ -330,6 +346,10 @@ Alias for address.
 
 Alias for dmitype.
 
+=head2 descriptions
+
+ my $description = $handle->description;
+
 =head2 keywords
 
  my @keywords = $handle->keywords;
@@ -345,6 +365,17 @@ this handle object.
              $handle->keyword($keyword)
          );
  }
+
+=head2 parsed_structures
+
+ use Data::Dumper;
+ my $ref = $handle->parsed_structures;
+ print Dumper($ref);
+
+Returns a copy of the parsed structures. This should be used with care
+as this is a cloned copy of the parsed data structures that the
+I<Parse::DMIDecode::Handle> object uses internally, and as such may
+change format in later releases without notice.
 
 =head1 SEE ALSO
 
