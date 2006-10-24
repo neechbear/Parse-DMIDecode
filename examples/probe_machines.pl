@@ -27,7 +27,7 @@ use constant DBI_USER    => 'username';
 use constant DBI_PASS    => 'password';
 
 # Where and how to generate a list of hosts to probe
-use constant HOSTS_REGEX => qr{(\S+)};
+use constant HOSTS_REGEX => qr{([a-zA-Z0-9\-\.]+)};
 use constant HOSTS_SKIP  => qw{(localhost|localdomain|127.0.0.1)};
 use constant HOSTS_SRC   => '/etc/hosts';
 
@@ -38,7 +38,7 @@ use constant REMOTE_CMD  => 'export PATH=/bin:/usr/bin:/sbin:/usr/sbin;
 	echo ==ifconfig==; ifconfig -a;
 	echo ==distribution==; grep . /etc/debian_version /etc/redhat-release /etc/mandrake-release /etc/SuSE-release;
 	echo ==netstat==; netstat -ltnu;
-	echo ==routee==; route -n;
+	echo ==route==; route -n;
 	echo ==x86info==; x86info;
 	echo ==lspci==; lspci;
 	echo ==cpuinfo==; cat /proc/cpuinfo;
@@ -100,7 +100,8 @@ for my $machine (sort(@hosts)) {
 	my $data = probe_server($machine);
 	if (defined $data->{NOCONNECT}) {
 		print_result('connect failed');
-	} elsif (defined $data->{'system-uuid'} && $data->{'system-uuid'} =~ /^[A-F0-9\-]{36}$/) {
+	} elsif (defined $data->{'system-uuid'} &&
+			$data->{'system-uuid'} =~ /^[A-F0-9\-]{36}$/) {
 		update_database($data);
 		print_result('done');
 	} else {
@@ -124,7 +125,8 @@ sub print_result {
 
 sub probe_server {
 	my ($machine) = $_[0] =~ /([a-z0-9\.\-\_]+)/i;
-	(my $cmd = sprintf('%s %s "%s" 2>/dev/null', SSH_CMD, $machine, REMOTE_CMD)) =~ s/\n//g;
+	(my $cmd = sprintf('%s %s "%s" 2>/dev/null',
+		SSH_CMD, $machine, REMOTE_CMD)) =~ s/\n//g;
 	my %raw = (HOSTNAME => $machine, NOCONNECT => 1);
 	my $group;
 
@@ -153,8 +155,9 @@ sub parse_raw_data {
 	# ==dmidecode==
 	if (defined $raw->{dmidecode}) {
 		$dmi->parse($raw->{dmidecode});
-		for (qw(system-uuid system-serial-number system-manufacturer system-product-name
-			system-vendor system-product baseboard-product-name baseboard-manufacturer
+		for (qw(system-uuid system-serial-number system-manufacturer
+			system-product-name system-vendor system-product
+			baseboard-product-name baseboard-manufacturer
 			bios-version bios-vendor chassis-type)) {
 			$raw->{$_} = $dmi->keyword($_);
 			$raw->{$_} = '' unless defined $raw->{$_};
@@ -164,8 +167,9 @@ sub parse_raw_data {
 			next unless defined $handle->keyword('processor-type') &&
 					$handle->keyword('processor-type') =~ /Central Processor/i;
 			$raw->{'physical-cpu-qty'}++;
-			for (qw(processor-family processor-manufacturer processor-current-speed processor-id
-				processor-type processor-version processor-signature processor-flags)) {
+			for (qw(processor-family processor-manufacturer
+				processor-current-speed processor-id processor-type
+				processor-version processor-signature processor-flags)) {
 				my $value = $handle->keyword($_);
 				if (!defined $value || (defined $value && $value =~ /Not Specified/i)) {
 					$raw->{$_} = '';
