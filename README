@@ -69,6 +69,9 @@ METHODS
              );
      }
 
+    See Parse::DMIDecode::Handle for accessor method documentation for
+    handle objects.
+
   smbios_version
      my $smbios_version = $decoder->smbios_version;
 
@@ -86,8 +89,8 @@ METHODS
      my $total_structures = $decoder->structures;
 
 SEE ALSO
-    examples/*.pl, <http://www.nongnu.org/dmidecode/>,
-    <http://linux.dell.com/libsmbios/>,
+    Parse::DMIDecode::Handle, Parse::DMIDecode::Constants, examples/*.pl,
+    <http://www.nongnu.org/dmidecode/>, <http://linux.dell.com/libsmbios/>,
     <http://sourceforge.net/projects/x86info/>,
     <http://www.dmtf.org/standards/smbios>, biosdecode(8), dmidecode(8),
     vpddecode(8)
