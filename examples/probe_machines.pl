@@ -27,35 +27,53 @@ use constant DBI_USER    => 'username';
 use constant DBI_PASS    => 'password';
 
 # Where and how to generate a list of hosts to probe
-use constant HOSTS_REGEX => qr{([a-zA-Z0-9\-\.]+)};
-use constant HOSTS_SKIP  => qw{(localhost|localdomain|127.0.0.1)};
+use constant HOSTS_REGEX => qr{([a-zA-|0-9\-\_\.]+)};
+use constant HOSTS_SKIP  => qw{(localhost|localhost.localdomain)};
 use constant HOSTS_SRC   => '/etc/hosts';
 
 # Remote command to gather information
 use constant SSH_CMD     => 'ssh';
 use constant REMOTE_CMD  => 'export PATH=/bin:/usr/bin:/sbin:/usr/sbin;
 	echo ==dmidecode==; dmidecode;
-	echo ==ifconfig==; ifconfig -a;
-	echo ==distribution==; grep . /etc/debian_version /etc/redhat-release /etc/mandrake-release /etc/SuSE-release;
-	echo ==netstat==; netstat -ltnu;
-	echo ==route==; route -n;
+	echo ==biosdecode==; biosdecode;
+	echo ==vpddecode==; vpddecode;
+	echo ==distribution==; grep . /etc/*debian* /etc/redhat-release /etc/mandrake-release /etc/SuSE-release;
+	echo ==netstat==; netstat -ltnup;
 	echo ==x86info==; x86info;
 	echo ==lspci==; lspci;
 	echo ==cpuinfo==; cat /proc/cpuinfo;
 	echo ==meminfo==; cat /proc/meminfo;
+	echo ==lsmod==; lsmod;
+	echo ==modules==; cat /proc/modules;
 	echo ==hostname==; hostname;
-	echo ==ide==; grep -r . /proc/ide/;
-	echo ==scsi==; grep -r . /proc/scsi/;
-	echo ==ipdiscover==; ipdiscover;
+	echo ==route==; route -n;
+	echo ==ifconfig==; ifconfig -a;
+	echo ==iptables==; iptables -L -n -v;
+	echo ==ethtool==; ethtool eth0; ethtool eth1;
+	echo ==ipdiscover==; ipdiscover eth0; ipdiscover eth1;
+	echo ==resolv==; cat /etc/resolv.conf;
+	echo ==hosts==; cat /etc/hosts;
 	echo ==uname==; uname -a;
-	echo ==biosdecode==; biosdecode;
-	echo ==vpddecode==; vpddecode;
 	echo ==rpm==; rpm -qa --queryformat \"%{NAME} %{VERSION} %{SUMMARY}\n\";
 	echo ==dpkg==; dpkg -l;
-	echo ==resolv==; cat /etc/resolv.conf;
-	echo ==uptime==; cat /proc/uptime;
+	echo ==uptime==; uptime;
 	echo ==who==; who;
+	echo ==w==; w;
+	echo ==date==; date;
+	echo ==iostat==; iostat;
+	echo ==vmstat==; vmstat;
+	echo ==free==; free;
+	echo ==pstree==; pstree;
+	echo ==ps==; ps -ef;
 	echo ==last==; last;
+	echo ==issue==; cat /etc/issue;
+	echo ==dmesg==; dmesg;
+	echo ==ide==; grep -r . /proc/ide/;
+	echo ==scsi==; grep -r . /proc/scsi/;
+	echo ==fdisk==; fdisk -l /dev/hd* /dev/sd*;
+	echo ==partitions==; cat /proc/partitions;
+	echo ==mounts==; cat /proc/mounts;
+	echo ==mount==; mount;
 	echo ==df==; df -TP';
 
 
@@ -100,8 +118,7 @@ for my $machine (sort(@hosts)) {
 	my $data = probe_server($machine);
 	if (defined $data->{NOCONNECT}) {
 		print_result('connect failed');
-	} elsif (defined $data->{'system-uuid'} &&
-			$data->{'system-uuid'} =~ /^[A-F0-9\-]{36}$/) {
+	} elsif (defined $data->{'system-uuid'} && $data->{'system-uuid'} =~ /^[A-F0-9\-]{36}$/) {
 		update_database($data);
 		print_result('done');
 	} else {
@@ -125,8 +142,7 @@ sub print_result {
 
 sub probe_server {
 	my ($machine) = $_[0] =~ /([a-z0-9\.\-\_]+)/i;
-	(my $cmd = sprintf('%s %s "%s" 2>/dev/null',
-		SSH_CMD, $machine, REMOTE_CMD)) =~ s/\n//g;
+	(my $cmd = sprintf('%s %s "%s" 2>/dev/null', SSH_CMD, $machine, REMOTE_CMD)) =~ s/\n//g;
 	my %raw = (HOSTNAME => $machine, NOCONNECT => 1);
 	my $group;
 
@@ -155,9 +171,8 @@ sub parse_raw_data {
 	# ==dmidecode==
 	if (defined $raw->{dmidecode}) {
 		$dmi->parse($raw->{dmidecode});
-		for (qw(system-uuid system-serial-number system-manufacturer
-			system-product-name system-vendor system-product
-			baseboard-product-name baseboard-manufacturer
+		for (qw(system-uuid system-serial-number system-manufacturer system-product-name
+			system-vendor system-product baseboard-product-name baseboard-manufacturer
 			bios-version bios-vendor chassis-type)) {
 			$raw->{$_} = $dmi->keyword($_);
 			$raw->{$_} = '' unless defined $raw->{$_};
@@ -167,9 +182,8 @@ sub parse_raw_data {
 			next unless defined $handle->keyword('processor-type') &&
 					$handle->keyword('processor-type') =~ /Central Processor/i;
 			$raw->{'physical-cpu-qty'}++;
-			for (qw(processor-family processor-manufacturer
-				processor-current-speed processor-id processor-type
-				processor-version processor-signature processor-flags)) {
+			for (qw(processor-family processor-manufacturer processor-current-speed processor-id
+				processor-type processor-version processor-signature processor-flags)) {
 				my $value = $handle->keyword($_);
 				if (!defined $value || (defined $value && $value =~ /Not Specified/i)) {
 					$raw->{$_} = '';
@@ -221,19 +235,19 @@ sub parse_raw_data {
 
 	# ==distribution==
 	if (defined $raw->{distribution}) {
-		if ($raw->{distribution} =~ /Red Hat Enterprise Linux/m) {
+		if ($raw->{distribution} =~ /Red Hat Enterprise Linux/mi) {
 			$raw->{distribution} = 'RHEL';
-		} elsif ($raw->{distribution} =~ /Slackware/) {
+		} elsif ($raw->{distribution} =~ /Slackware/mi) {
 			$raw->{distribution} = 'Slackware';
-		} elsif ($raw->{distribution} =~ /Mandrake/) {
+		} elsif ($raw->{distribution} =~ /Mandrake/mi) {
 			$raw->{distribution} = 'Mandrake';
-		} elsif ($raw->{distribution} =~ /SuSE/) {
+		} elsif ($raw->{distribution} =~ /SuSE/mi) {
 			$raw->{distribution} = 'SuSE';
-		} elsif ($raw->{distribution} =~ /Ubuntu/) {
+		} elsif ($raw->{distribution} =~ /Ubuntu/mi) {
 			$raw->{distribution} = 'Ubuntu';
-		} elsif ($raw->{distribution} =~ /Red\s*Hat/) {
+		} elsif ($raw->{distribution} =~ /Red\s*Hat/mi) {
 			$raw->{distribution} = 'RedHat';
-		} elsif ($raw->{distribution} =~ /Debian/) {
+		} elsif ($raw->{distribution} =~ /Debian/mi) {
 			$raw->{distribution} = 'Debian';
 		} else {
 			$raw->{distribution} = 'Linux';
@@ -323,8 +337,12 @@ sub update_record {
 	if (!$ref->{delete_first} && $sth->rows >= 1) {
 		my @set; my @set_bind;
 		while (my ($col,$value) = each %{$ref->{cols}}) {
-			push @set, sprintf(' %s = ? ',$col);
-			push @set_bind, $value;
+			if (defined $value && $value eq 'NOW()') {
+				push @set, sprintf(' %s = %s ',$col,$value);
+			} else {
+				push @set, sprintf(' %s = ? ',$col);
+				push @set_bind, $value;
+			}
 		}
 		$sql = sprintf('UPDATE %s SET %s WHERE %s',
 				$ref->{table},
@@ -338,9 +356,14 @@ sub update_record {
 	} else {
 		my @cols; my @cols_bind; my @placeholders;
 		while (my ($col,$value) = each %{$ref->{cols}}) {
-			push @cols, $col;
-			push @cols_bind, $value;
-			push @placeholders, '?';
+			if (defined $value && $value eq 'NOW()') {
+				push @cols, $col;
+				push @placeholders, $value;
+			} else {
+				push @cols, $col;
+				push @cols_bind, $value;
+				push @placeholders, '?';
+			}
 		}
 		$sql = sprintf('INSERT INTO %s (%s) VALUES (%s)',
 				$ref->{table},
@@ -369,6 +392,7 @@ sub update_database {
 				model_id => $model_id,
 				serial => $data->{'system-serial-number'},
 				uuid => $data->{'system-uuid'},
+				last_checked => 'NOW()',
 			},
 			where => {
 				uuid => $data->{'system-uuid'},
@@ -380,6 +404,7 @@ sub update_database {
 				uuid => $data->{'system-uuid'},
 				hostname => $data->{HOSTNAME},
 				os => $data->{'distribution'},
+				last_checked => 'NOW()',
 			},
 			where => {
 				hostname => $data->{HOSTNAME},
@@ -517,6 +542,8 @@ CREATE TABLE machine (
 		uuid CHAR(36) NOT NULL PRIMARY KEY,
 		serial VARCHAR(16),
 		model_id INT UNSIGNED,
+		created DATETIME NOT NULL,
+		last_checked TIMESTAMP NOT NULL,
 		FOREIGN KEY (model_id) REFERENCES model(model_id)
 	) ENGINE=InnoDB;
 
@@ -524,6 +551,8 @@ CREATE TABLE host (
 		hostname VARCHAR(32) NOT NULL PRIMARY KEY,
 		uuid CHAR(36) NOT NULL,
 		os ENUM('Debian','Mandrake','RedHat','RHEL','Ubuntu','Gentoo','Slackware','SuSE','Windows','Linux'),
+		created DATETIME NOT NULL,
+		last_checked TIMESTAMP NOT NULL,
 		FOREIGN KEY (uuid) REFERENCES machine(uuid) ON DELETE CASCADE
 	) ENGINE=InnoDB;
 
