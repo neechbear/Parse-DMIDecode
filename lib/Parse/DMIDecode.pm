@@ -23,7 +23,7 @@ package Parse::DMIDecode;
 # vim:ts=4:sw=4:tw=78
 
 use strict;
-use Scalar::Util qw(refaddr);
+#use Scalar::Util qw(refaddr);
 use Parse::DMIDecode::Handle;
 use Parse::DMIDecode::Constants qw(@TYPES %GROUPS);
 use Carp qw(croak cluck carp);
@@ -44,8 +44,8 @@ sub new {
 	croak 'Odd number of elements passed when even was expected' if @_ % 2;
 
 	my $self = bless \(my $dummy), $class;
-	$objstore->{refaddr($self)} = {@_};
-	my $stor = $objstore->{refaddr($self)};
+	$objstore->{_refaddr($self)} = {@_};
+	my $stor = $objstore->{_refaddr($self)};
 
 	$stor->{commands} = [qw(dmidecode)];
 	my $validkeys = join('|','nowarnings',@{$stor->{commands}});
@@ -70,7 +70,7 @@ sub probe {
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
 
-	my $stor = $objstore->{refaddr($self)};
+	my $stor = $objstore->{_refaddr($self)};
 	eval {
 		if (!defined $stor->{dmidecode}) {
 			require File::Which;
@@ -104,7 +104,7 @@ sub parse {
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
 
-	my $stor = $objstore->{refaddr($self)};
+	my $stor = $objstore->{_refaddr($self)};
 	my %data = (handles => []);
 
 	my @lines;
@@ -173,7 +173,7 @@ sub get_handles {
 
 	croak 'Odd number of elements passed when even was expected' if @_ % 2;
 	my %param = @_;
-	my $stor = $objstore->{refaddr($self)};
+	my $stor = $objstore->{_refaddr($self)};
 	my @handles;
 	my $getall = !keys(%param);
 
@@ -196,7 +196,7 @@ sub structures {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
-	return $objstore->{refaddr($self)}->{parsed}->{structures};
+	return $objstore->{_refaddr($self)}->{parsed}->{structures};
 }
 
 
@@ -204,7 +204,7 @@ sub table_location {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
-	return $objstore->{refaddr($self)}->{parsed}->{location};
+	return $objstore->{_refaddr($self)}->{parsed}->{location};
 }
 
 
@@ -212,7 +212,7 @@ sub smbios_version {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
-	return $objstore->{refaddr($self)}->{parsed}->{smbios};
+	return $objstore->{_refaddr($self)}->{parsed}->{smbios};
 }
 
 
@@ -220,7 +220,7 @@ sub dmidecode_version {
 	my $self = shift;
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
-	return $objstore->{refaddr($self)}->{parsed}->{dmidecode};
+	return $objstore->{_refaddr($self)}->{parsed}->{dmidecode};
 }
 
 
@@ -229,7 +229,7 @@ sub handle_addresses {
 	croak 'Not called as a method by parent object'
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
 	return map { $_->handle }
-		@{$objstore->{refaddr($self)}->{parsed}->{handles}};
+		@{$objstore->{_refaddr($self)}->{parsed}->{handles}};
 }
 
 
@@ -239,7 +239,7 @@ sub keywords {
 		unless ref $self && UNIVERSAL::isa($self, __PACKAGE__);
 
 	my %keywords;
-	my $stor = $objstore->{refaddr($self)};
+	my $stor = $objstore->{_refaddr($self)};
 	for my $handle (@{$stor->{parsed}->{handles}}) {
 		for my $keyword ($handle->keywords) {
 			$keywords{$keyword} = 1;
@@ -257,7 +257,7 @@ sub keyword {
 	croak sprintf('%s elements passed when one was expected',
 		(@_ > 1 ? 'Multiple' : 'No')) if @_ != 1;
 
-	my $stor = $objstore->{refaddr($self)};
+	my $stor = $objstore->{_refaddr($self)};
 	for my $handle (@{$stor->{parsed}->{handles}}) {
 		if (grep($_ eq $_[0],$handle->keywords)) {
 			return $handle->keyword($_[0]);
@@ -266,9 +266,36 @@ sub keyword {
 }
 
 
+no warnings 'redefine';
+sub UNIVERSAL::a_sub_not_likely_to_be_here { ref($_[0]) }
+use warnings 'redefine';
+
+
+sub _blessed ($) {
+	local($@, $SIG{__DIE__}, $SIG{__WARN__});
+	return length(ref($_[0]))
+			? eval { $_[0]->a_sub_not_likely_to_be_here }
+			: undef
+}
+
+
+sub _refaddr($) {
+	my $pkg = ref($_[0]) or return undef;
+	if (_blessed($_[0])) {
+		bless $_[0], 'Scalar::Util::Fake';
+	} else {
+		$pkg = undef;
+	}
+	"$_[0]" =~ /0x(\w+)/;
+	my $i = do { local $^W; hex $1 };
+	bless $_[0], $pkg if defined $pkg;
+	return $i;
+}
+
+
 sub DESTROY {
 	my $self = shift;
-	delete $objstore->{refaddr($self)};
+	delete $objstore->{_refaddr($self)};
 }
 
 

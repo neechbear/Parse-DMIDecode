@@ -1,3 +1,6 @@
+Version 0.03 - 26th February 2007
+    + Removed depencancy on Scalar::Util.
+
 Version 0.02 - 22th October 2006
     + Added better support for older versions of dmidecode
       binary output parsing.
