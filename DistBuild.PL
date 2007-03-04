@@ -37,6 +37,7 @@ if ($ENV{CVSROOT} && -d 'CVS' && !-d '.svn' && `which cvs2cl.pl`) {
 		&& unlink 'ChangeLog.bak';
 }
 
+unlink 'MANIFEST';
 stage('Updating MANIFEST');
 $build->dispatch('manifest');
 
@@ -61,6 +62,7 @@ if (check_repository(uncommited_only => 1, silent => 1, ignore => "(META.yml|Mak
 	print "Uncommited files; skipping ...\n";
 } else {
 	$build->dispatch('distcheck');
+	chmod 0644, 'Build.PL';
 	$build->dispatch('dist');
 	$build->dispatch('ppmdist');
 
