@@ -347,11 +347,6 @@ This module provides an OO interface to SMBIOS information through
 the I<dmidecode> command which is known to work under a number of
 Linux, BSD and BeOS variants.
 
-This module is still actively under development, is no not yet
-feature complete and still needs to be fully documented. There is
-a possibility accessor method names may change before the final
-release.
-
 =head1 METHODS
 
 =head2 new
@@ -428,6 +423,8 @@ for handle objects.
 =head2 smbios_version
 
  my $smbios_version = $decoder->smbios_version;
+
+Returns the SMBIOS version number.
 
 =head2 dmidecode_version
 
