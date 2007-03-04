@@ -3,7 +3,7 @@
 #   $Id$
 #   Parse::DMIDecode - Interface to SMBIOS under Linux using dmidecode
 #
-#   Copyright 2006 Nicola Worthington
+#   Copyright 2006,2007 Nicola Worthington
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ use Parse::DMIDecode::Constants qw(@TYPES %GROUPS);
 use Carp qw(croak cluck carp);
 use vars qw($VERSION $DEBUG);
 
-$VERSION = '0.03' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
+$VERSION = '0.04' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 
 my $objstore = {};
@@ -455,7 +455,7 @@ L<Amazon wishlist|http://www.amazon.co.uk/gp/registry/1VZXC59ESWYK0?sort=priorit
 
 =head1 COPYRIGHT
 
-Copyright 2006 Nicola Worthington.
+Copyright 2006,2007 Nicola Worthington.
 
 This software is licensed under The Apache Software License, Version 2.0.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -wT
 ############################################################
 #
-#   $Id: probe_machine.pl 809 2006-10-22 12:47:45Z nicolaw $
+#   $Id$
 #   probe_machine.pl - Example script for Parse::DMIDecode
 #
 #   Copyright 2006 Nicola Worthington

@@ -1,0 +1,37 @@
+#!/usr/bin/perl -w
+
+use 5.6.1;
+use strict;
+use warnings;
+use Parse::DMIDecode qw();
+
+my $dmi = Parse::DMIDecode->new( nowarnings => 1);
+$dmi->probe;
+
+my $physical_cpus = 0;
+
+for my $handle ($dmi->get_handles(group => 'processor')) {
+        my $type = $handle->keyword('processor-type') || '';
+        next unless $type =~ /Central Processor/i;
+
+        # The speed might be in the format "nnnn Mhz" or similar.
+        # We only want the numeric value from it.
+        my $speed = $handle->keyword('processor-current-speed') || 0;
+        ($speed) = $speed =~ /(\d+)/;
+
+        # I doubt people have SMBIOS capable machines with CPUs
+        # that run at less than 8Mhz! This is a basic check to
+        # make sure there is an actual CPU in the socket. You
+        # could check with any number of ways, but this seems
+        # reasonable enough.
+        if (defined $speed && $speed =~ /^\d+$/ && $speed > 8) {
+                $physical_cpus++;
+        }
+}
+
+printf("There %s %d %s in this machine.\n",
+                ($physical_cpus == 1 ? 'is' : 'are'),
+                $physical_cpus,
+                ($physical_cpus == 1 ? 'CPU' : 'CPUs'),
+        );
+

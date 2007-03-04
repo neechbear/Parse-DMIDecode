@@ -1,4 +1,4 @@
-# $Id: 30tie.t 567 2006-06-01 18:38:57Z nicolaw $
+# $Id$
 
 chdir('t') if -d 't';
 
