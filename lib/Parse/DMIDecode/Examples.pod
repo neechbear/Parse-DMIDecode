@@ -1,37 +1,66 @@
-#!/usr/bin/perl -w
+############################################################
+#
+#   $Id: Examples.pm 756 2006-08-24 22:30:54Z nicolaw $
+#   Parse::DMIDecode::Examples - Examples using Parse::DMIDecode::Examples
+#
+#   Copyright 2007 Nicola Worthington
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+############################################################
+# vim:ts=4:sw=4:tw=78
 
-use 5.6.1;
-use strict;
-use warnings;
-use Parse::DMIDecode qw();
+=pod
 
-my $dmi = Parse::DMIDecode->new( nowarnings => 1);
-$dmi->probe;
+=head1 NAME
 
-my $physical_cpus = 0;
+Parse::DMIDecode::Examples - Examples using Parse::DMIDecode::Examples
 
-for my $handle ($dmi->get_handles(group => 'processor')) {
-        my $type = $handle->keyword('processor-type') || '';
-        next unless $type =~ /Central Processor/i;
+=head1 EXAMPLES
 
-        # The speed might be in the format "nnnn Mhz" or similar.
-        # We only want the numeric value from it.
-        my $speed = $handle->keyword('processor-current-speed') || 0;
-        ($speed) = $speed =~ /(\d+)/;
+=head2 Example 1: Find the Number of Physical CPUs
 
-        # I doubt people have SMBIOS capable machines with CPUs
-        # that run at less than 8Mhz! This is a basic check to
-        # make sure there is an actual CPU in the socket. You
-        # could check with any number of ways, but this seems
-        # reasonable enough.
-        if (defined $speed && $speed =~ /^\d+$/ && $speed > 8) {
-                $physical_cpus++;
-        }
-}
+ use strict;
+ use Parse::DMIDecode qw();
+ 
+ my $dmi = Parse::DMIDecode->new( nowarnings => 1);
+ $dmi->probe;
+ 
+ my $physical_cpus = 0;
+ for my $handle ($decoder->get_handles(group => 'processor')) {
+     my $type = $handle->keyword('processor-type') || '';
+     next unless $type =~ /Central Processor/i;
+     my $status = $handle->keyword('processor-status') || '';
+ 
+     # check the status of the cpu
+     if (!($status =~ /Unpopulated/) ) {
+         $physical_cpus++;
+     }
+ }
+ 
+ printf("There %s %d %s in this machine.\n",
+         ($physical_cpus == 1 ? 'is' : 'are'),
+         $physical_cpus,
+         ($physical_cpus == 1 ? 'CPU' : 'CPUs'),
+     );
 
-printf("There %s %d %s in this machine.\n",
-                ($physical_cpus == 1 ? 'is' : 'are'),
-                $physical_cpus,
-                ($physical_cpus == 1 ? 'CPU' : 'CPUs'),
-        );
+=head1 COPYRIGHT
+
+Copyright 2007 Nicola Worthington.
+
+This software is licensed under The Apache Software License, Version 2.0.
+
+L<http://www.apache.org/licenses/LICENSE-2.0>
+
+=cut
 
