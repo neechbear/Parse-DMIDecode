@@ -40,9 +40,9 @@ Parse::DMIDecode::Examples - Examples using Parse::DMIDecode::Examples
  for my $handle ($decoder->get_handles(group => "processor")) {
      my $type = $handle->keyword("processor-type") || "";
      next unless $type =~ /Central Processor/i;
-     my $status = $handle->keyword("processor-status") || "";
  
      # Check the status of the cpu
+     my $status = $handle->keyword("processor-status") || "";
      if ($status !~ /Unpopulated/i) {
          $physical_cpus++;
      }
