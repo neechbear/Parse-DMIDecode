@@ -1,7 +1,7 @@
 ############################################################
 #
 #   $Id$
-#   Parse::DMIDecode - Interface to SMBIOS under Linux using dmidecode
+#   Parse::DMIDecode - Interface to SMBIOS using dmidecode
 #
 #   Copyright 2006,2007 Nicola Worthington
 #
@@ -323,7 +323,7 @@ sub DUMP {
 
 =head1 NAME
 
-Parse::DMIDecode - Interface to SMBIOS under Linux using dmidecode
+Parse::DMIDecode - Interface to SMBIOS using dmidecode
 
 =head1 SYNOPSIS
 
@@ -357,18 +357,36 @@ release.
 =head2 new
 
  my $decoder = Parse::DMIDecode->new(
-                     dmidecode => "/usr/sbin/dmidecode"),
-                     nowarnings => 1
+                     dmidecode => "/usr/sbin/dmidecode",
+                     nowarnings => 1,
                  );
+
+This is the constructor method to create a Parse::DMIDeocde
+object. It accepts two optional parameters; C<dmidecode> and
+C<nowarnings>.
+
+The C<dmidecode> argument specifies the full path and filename
+of the I<dmodecode> command that should used by the C<probe>
+method.
+
+The C<nowarnings> argument instructs Parse::DMIDecode not to
+emit any parser warnings.
 
 =head2 probe
 
  $decoder->probe;
 
+This method executes an active probe to gather information using the
+I<dmidecode> command. It does not accept any arguments.
+
 =head2 parse
 
  my $raw = qx(sudo /usr/sbin/dmidecode);
  $decoder->prase($raw);
+
+This method is a passive alternative to the C<probe> method. It
+accepts a single string argument which should contain output from
+the I<dmidecode> command, which it will parse.
 
 =head2 keyword
 
@@ -431,7 +449,9 @@ when using older versions of I<dmidecode>.
 
 L<Parse::DMIDecode::Handle>,
 L<Parse::DMIDecode::Constants>,
+L<Parse::DMIDecode::Examples>,
 examples/*.pl,
+L<http://search.cpan.org/src/NICOLAW/Parse-DMIDecode-0.04/examples/>,
 L<http://www.nongnu.org/dmidecode/>,
 L<http://linux.dell.com/libsmbios/>,
 L<http://sourceforge.net/projects/x86info/>,
