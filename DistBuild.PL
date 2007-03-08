@@ -4,7 +4,7 @@
 #   $Id$
 #   DistBuild.PL - CPAN Distribution Build Script for Subversion & CVS
 #
-#   Copyright 2006 Nicola Worthington
+#   Copyright 2006,2007 Nicola Worthington
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -28,6 +28,12 @@ use vars qw($build);
 
 $build = undef;
 do 'Build.PL';
+
+die unless -f 'DistBuild.PL' && -f 'Build.PL' && -d 'lib';
+$build->do_system('find . -type f | xargs chmod 644; find . -type d | xargs chmod 755');
+umask 0000;
+chmod 0644, 'Build.PL';
+chmod 0755, 'DistBuild.PL';
 
 check_repository();
 
@@ -62,7 +68,6 @@ if (check_repository(uncommited_only => 1, silent => 1, ignore => "(META.yml|Mak
 	print "Uncommited files; skipping ...\n";
 } else {
 	$build->dispatch('distcheck');
-	chmod 0644, 'Build.PL';
 	$build->dispatch('dist');
 	$build->dispatch('ppmdist');
 
