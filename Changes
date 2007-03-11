@@ -1,4 +1,4 @@
-Version 0.03 - 10th March 2007
+Version 0.03 - 11th March 2007
     + Added Parse::DMIDecode::Examples POD file containing
       a small selection of useful code examples.
 
@@ -9,6 +9,8 @@ Version 0.03 - 10th March 2007
     + Added complain.txt.
 
     + Removed depencancy on Scalar::Util.
+
+    + Added some additional POD.
 
 
 Version 0.02 - 22th October 2006
