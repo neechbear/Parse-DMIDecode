@@ -37,18 +37,18 @@ Parse::DMIDecode::Examples - Examples using Parse::DMIDecode::Examples
  $dmi->probe;
  
  my $physical_cpus = 0;
- for my $handle ($decoder->get_handles(group => "processor")) {
-     my $type = $handle->keyword("processor-type") || "";
+ for my $handle ($dmi->get_handles(group => "processor")) {
+     my $type = ($handle->keyword("processor-type") or "");
      next unless $type =~ /Central Processor/i;
  
      # Check the status of the cpu
-     my $status = $handle->keyword("processor-status") || "";
+     my $status = ($handle->keyword("processor-status") or "");
      if ($status !~ /Unpopulated/i) {
          $physical_cpus++;
      }
  }
  
- printf("There %s %d %s in this machine.\n",
+ printf("There %s %d physical %s in this machine.\n",
          ($physical_cpus == 1 ? "is" : "are"),
          $physical_cpus,
          ($physical_cpus == 1 ? "CPU" : "CPUs"),
