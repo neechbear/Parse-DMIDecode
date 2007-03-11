@@ -357,7 +357,7 @@ Linux, BSD and BeOS variants.
                  );
 
 This is the constructor method to create a Parse::DMIDeocde
-object. It accepts two optional parameters; C<dmidecode> and
+object. It accepts two optional arguments; C<dmidecode> and
 C<nowarnings>.
 
 The C<dmidecode> argument specifies the full path and filename
