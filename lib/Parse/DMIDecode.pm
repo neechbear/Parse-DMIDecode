@@ -29,7 +29,7 @@ use Parse::DMIDecode::Constants qw(@TYPES %GROUPS);
 use Carp qw(croak cluck carp);
 use vars qw($VERSION $DEBUG);
 
-$VERSION = '0.03' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
+$VERSION = '0.04' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 
 my $objstore = {};
@@ -356,12 +356,12 @@ Linux, BSD and BeOS variants.
                      nowarnings => 1,
                  );
 
-This is the constructor method to create a Parse::DMIDeocde
+This is the constructor method to create a Parse::DMIDecode
 object. It accepts two optional arguments; C<dmidecode> and
 C<nowarnings>.
 
 The C<dmidecode> argument specifies the full path and filename
-of the I<dmodecode> command that should used by the C<probe>
+of the I<dmidecode> command that should used by the C<probe>
 method.
 
 The C<nowarnings> argument instructs Parse::DMIDecode not to
@@ -448,7 +448,7 @@ L<Parse::DMIDecode::Handle>,
 L<Parse::DMIDecode::Constants>,
 L<Parse::DMIDecode::Examples>,
 examples/*.pl,
-L<http://search.cpan.org/src/NICOLAW/Parse-DMIDecode-0.03/examples/>,
+L<http://search.cpan.org/src/NICOLAW/Parse-DMIDecode-0.04/examples/>,
 L<http://www.nongnu.org/dmidecode/>,
 L<http://linux.dell.com/libsmbios/>,
 L<http://sourceforge.net/projects/x86info/>,

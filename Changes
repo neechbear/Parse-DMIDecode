@@ -1,3 +1,7 @@
+Version 0.04 - 19th March 2007
+    + Fixed a few typos in the POD.
+
+
 Version 0.03 - 11th March 2007
     + Added Parse::DMIDecode::Examples POD file containing
       a small selection of useful code examples.
