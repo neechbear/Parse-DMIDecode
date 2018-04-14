@@ -3,7 +3,7 @@
 #   $Id$
 #   Parse::DMIDecode - Interface to SMBIOS using dmidecode
 #
-#   Copyright 2006,2007 Nicola Worthington
+#   Copyright 2006,2007,2018 Nicola Worthington
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ use Parse::DMIDecode::Constants qw(@TYPES %GROUPS);
 use Carp qw(croak cluck carp);
 use vars qw($VERSION $DEBUG);
 
-$VERSION = '0.04' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
+$VERSION = '0.05' || sprintf('%d', q$Revision$ =~ /(\d+)/g);
 $DEBUG ||= $ENV{DEBUG} ? 1 : 0;
 
 my $objstore = {};
@@ -455,24 +455,15 @@ L<http://sourceforge.net/projects/x86info/>,
 L<http://www.dmtf.org/standards/smbios>,
 L<biosdecode(8)>, L<dmidecode(8)>, L<vpddecode(8)>
 
-=head1 VERSION
-
-$Id$
-
 =head1 AUTHOR
 
-Nicola Worthington <nicolaw@cpan.org>
+Nicola Worthington <nicolaw@tfb.net>
 
-L<http://perlgirl.org.uk>
-
-If you like this software, why not show your appreciation by sending the
-author something nice from her
-L<Amazon wishlist|http://www.amazon.co.uk/gp/registry/1VZXC59ESWYK0?sort=priority>? 
-( http://www.amazon.co.uk/gp/registry/1VZXC59ESWYK0?sort=priority )
+L<https://nicolaw.uk>
 
 =head1 COPYRIGHT
 
-Copyright 2006,2007 Nicola Worthington.
+Copyright 2006,2007,2018 Nicola Worthington.
 
 This software is licensed under The Apache Software License, Version 2.0.
 

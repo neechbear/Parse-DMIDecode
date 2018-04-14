@@ -3,7 +3,7 @@
 #   $Id$
 #   Parse::DMIDecode::Handle - SMBIOS Structure Handle Object Class
 #
-#   Copyright 2006 Nicola Worthington
+#   Copyright 2006,2018 Nicola Worthington
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -285,6 +285,10 @@ sub _parse {
 	return (\%data,\%keywords);
 }
 
+sub DESTROY {
+	my $self = shift;
+	delete $objstore->{_refaddr($self)};
+}
 
 sub TRACE {
 	return unless $DEBUG;
@@ -409,24 +413,15 @@ change format in later releases without notice.
 
 L<Parse::DMIDecode>
 
-=head1 VERSION
-
-$Id$
-
 =head1 AUTHOR
 
-Nicola Worthington <nicolaw@cpan.org>
+Nicola Worthington <nicolaw@tfb.net>
 
-L<http://perlgirl.org.uk>
-
-If you like this software, why not show your appreciation by sending the
-author something nice from her
-L<Amazon wishlist|http://www.amazon.co.uk/gp/registry/1VZXC59ESWYK0?sort=priority>? 
-( http://www.amazon.co.uk/gp/registry/1VZXC59ESWYK0?sort=priority )
+L<https://nicolaw.uk>
 
 =head1 COPYRIGHT
 
-Copyright 2006 Nicola Worthington.
+Copyright 2006,2018 Nicola Worthington.
 
 This software is licensed under The Apache Software License, Version 2.0.
 
@@ -434,9 +429,5 @@ L<http://www.apache.org/licenses/LICENSE-2.0>
 
 =cut
 
-
 __END__
-
-
-
 
